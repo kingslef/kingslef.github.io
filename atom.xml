@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Aatos Jalo]]></title>
-  <link href="http://www.aatosjalo.com/atom.xml" rel="self"/>
-  <link href="http://www.aatosjalo.com/"/>
+  <link href="https://www.aatosjalo.com/atom.xml" rel="self"/>
+  <link href="https://www.aatosjalo.com/"/>
   <updated>2016-04-02T12:32:28+03:00</updated>
-  <id>http://www.aatosjalo.com/</id>
+  <id>https://www.aatosjalo.com/</id>
   <author>
     <name><![CDATA[Aatos Jalo]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Creating a NES emulator]]></title>
-    <link href="http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/"/>
+    <link href="https://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/"/>
     <updated>2015-05-31T21:24:35+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator</id>
+    <id>https://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator</id>
     <content type="html"><![CDATA[<p>I read an
 <a href="https://medium.com/@fogleman/i-made-an-nes-emulator-here-s-what-i-learned-about-the-original-nintendo-2e078c9b28fe">interesting post</a>
 about NES internals and its emulation and I immediately wanted to create my own
@@ -53,7 +53,7 @@ harder. For emulating first trials, I used
 cross-platform emulators, but I found debugger only in Windows version of
 <code>FCEUX</code>, so I had to use Wine for that.</p>
 
-<p><img src="http://www.aatosjalo.com/images/posts/helloworld.gif" title="My first ROM!" ></p>
+<p><img src="https://www.aatosjalo.com/images/posts/helloworld.gif" title="My first ROM!" ></p>
 
 <p>At this point I created two simple NES ROMs. First one had few sprites moving
 across the screen (above), and the second one was a two-player pong game
@@ -61,7 +61,7 @@ across the screen (above), and the second one was a two-player pong game
 <a href="https://bitbucket.org/aatos/nes-demos/src">Bitbucket</a> (those could be
 improved - to say the least).</p>
 
-<p><img src="http://www.aatosjalo.com/images/posts/pong.gif" title="Pong game" ></p>
+<p><img src="https://www.aatosjalo.com/images/posts/pong.gif" title="Pong game" ></p>
 
 <p>I decided not to handle sounds at this point, so now I was ready for starting
 the emulator itself. After reading the
@@ -69,7 +69,7 @@ the emulator itself. After reading the
 <a href="http://www.obelisk.demon.co.uk/6502/reference.html">opcodes</a>. Fast-forward
 some time and I was able to even draw some sprites to the screen!</p>
 
-<p><img src="http://www.aatosjalo.com/images/posts/simpler.png" title="First ROM emulated" ></p>
+<p><img src="https://www.aatosjalo.com/images/posts/simpler.png" title="First ROM emulated" ></p>
 
 <p>There is still much to do, but the sources can be found from
 <a href="https://bitbucket.org/aatos/6502-emulator/src">here</a> (requires <code>clang</code> and
@@ -79,9 +79,9 @@ some time and I was able to even draw some sprites to the screen!</p>
   
   <entry>
     <title type="html"><![CDATA[GCC Extensions]]></title>
-    <link href="http://www.aatosjalo.com/blog/2015/04/04/gcc-extensions/"/>
+    <link href="https://www.aatosjalo.com/blog/2015/04/04/gcc-extensions/"/>
     <updated>2015-04-04T17:58:21+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2015/04/04/gcc-extensions</id>
+    <id>https://www.aatosjalo.com/blog/2015/04/04/gcc-extensions</id>
     <content type="html"><![CDATA[<p>I have been using GCC quite much, but I haven&rsquo;t really ever used its extensions
 (except some C99 features in C90). Recently, I stumbled upon the documentation
 of all the
@@ -524,9 +524,9 @@ from <a href="https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html#C-Extensions"
   
   <entry>
     <title type="html"><![CDATA[Using Twitter API with C]]></title>
-    <link href="http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/"/>
+    <link href="https://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/"/>
     <updated>2015-02-01T19:01:51+02:00</updated>
-    <id>http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c</id>
+    <id>https://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c</id>
     <content type="html"><![CDATA[<p>I wanted once to implement simple twitter integration with one C application.
 Even though everything can be found in <a href="https://dev.twitter.com,">https://dev.twitter.com,</a> having no
 experience in the API (or OAuth, or OpenSSL), it can take some time to get used
@@ -1227,9 +1227,9 @@ can be found <a href="https://bitbucket.org/aatos/twitter-update/">here</a>.</p>
   
   <entry>
     <title type="html"><![CDATA[Adding Finnish alphabets to US keyboard layout]]></title>
-    <link href="http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout/"/>
+    <link href="https://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout/"/>
     <updated>2015-01-25T12:04:47+02:00</updated>
-    <id>http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout</id>
+    <id>https://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout</id>
     <content type="html"><![CDATA[<p>I don&rsquo;t like Finnish keyboard layout that much. Way too many characters require
 three keys to be pressed simultaneously. This is especially annoying when
 programming, since to get, e.g., different types of brackets, you have to change
@@ -1256,7 +1256,7 @@ needed those capitalized and I could manage those rare occasions with <code>M-c<
 <p>Modifying keyboard layout in Windows requires <a href="https://msdn.microsoft.com/en-us/goglobal/bb964665.aspx">Microsoft Keyboard Layout Creator</a>
 which is quite straightforward to use. There you can load the US layout and
 change the extra key to whatever you want. You can find the source file for MKLC
-<a href="http://aatosjalo.com/downloads/us-ae.klc">here</a> or even the ready-made installer <a href="http://aatosjalo.com/downloads/us-ae-oe.zip">here</a>.</p>
+<a href="https://aatosjalo.com/downloads/us-ae.klc">here</a> or even the ready-made installer <a href="https://aatosjalo.com/downloads/us-ae-oe.zip">here</a>.</p>
 
 <p>In Linux this is even easier. With <code>xmodmap</code> you can modify your current X
 keyboard bindings. By doing <code>xmodmap -pke &gt; ~/.Xmodmap</code>, you can dump your
@@ -1299,9 +1299,9 @@ by modifying the same file. For doing that on Windows, I have used
   
   <entry>
     <title type="html"><![CDATA[Sockets in C]]></title>
-    <link href="http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/"/>
+    <link href="https://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/"/>
     <updated>2014-07-14T16:17:33+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c</id>
+    <id>https://www.aatosjalo.com/blog/2014/07/14/sockets-in-c</id>
     <content type="html"><![CDATA[<p>It has been a while since I have done anything with sockets in C, so I figured I
 should refresh my
 memory. <a href="http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html">Beej</a>
@@ -1645,16 +1645,16 @@ properly closed the socket. So if zero is returned, client didn&rsquo;t send any
 to check the return values and print errors with
 <a href="http://linux.die.net/man/3/perror">perror(3)</a> if you run in to any problems. As
 always, you can download the complete files for the
-<a href="http://aatosjalo.com/downloads/code/client.c">client</a> and the
-<a href="http://aatosjalo.com/downloads/code/server.c">server</a>.</p>
+<a href="https://aatosjalo.com/downloads/code/client.c">client</a> and the
+<a href="https://aatosjalo.com/downloads/code/server.c">server</a>.</p>
 ]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[Understanding Boyer-Moore]]></title>
-    <link href="http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/"/>
+    <link href="https://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/"/>
     <updated>2014-06-30T20:21:25+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore</id>
+    <id>https://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore</id>
     <content type="html"><![CDATA[<p>Boyer-Moore string searching algorithm is very elementary string searching
 algorithm that is probably gone through as a first or second algorithm in every
 string algorithm course. Even though it is a basic algorithm, it doesn&rsquo;t mean
@@ -2165,7 +2165,7 @@ case. But since we are trying to understand how BM works, I think this approach
 is justified since it is easier to understand.</p>
 
 <p>You can find the whole implementation
-<a href="http://aatosjalo.com/downloads/code/bm.c">here</a> with few unit tests. It should
+<a href="https://aatosjalo.com/downloads/code/bm.c">here</a> with few unit tests. It should
 print something like this:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -2219,9 +2219,9 @@ print something like this:</p>
   
   <entry>
     <title type="html"><![CDATA[Hello]]></title>
-    <link href="http://www.aatosjalo.com/blog/2014/06/12/hello/"/>
+    <link href="https://www.aatosjalo.com/blog/2014/06/12/hello/"/>
     <updated>2014-06-12T23:32:04+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2014/06/12/hello</id>
+    <id>https://www.aatosjalo.com/blog/2014/06/12/hello</id>
     <content type="html"><![CDATA[<p>This is the first post. I&rsquo;ll be writing about programming and somehow
 related areas that I&rsquo;m interested in and want to learn more. Basically
 I&rsquo;ll document what I have done and learned, mostly for myself, but if

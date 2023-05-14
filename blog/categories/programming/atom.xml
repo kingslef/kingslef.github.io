@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: programming | Aatos Jalo]]></title>
-  <link href="http://www.aatosjalo.com/blog/categories/programming/atom.xml" rel="self"/>
-  <link href="http://www.aatosjalo.com/"/>
+  <link href="https://www.aatosjalo.com/blog/categories/programming/atom.xml" rel="self"/>
+  <link href="https://www.aatosjalo.com/"/>
   <updated>2016-04-02T12:32:28+03:00</updated>
-  <id>http://www.aatosjalo.com/</id>
+  <id>https://www.aatosjalo.com/</id>
   <author>
     <name><![CDATA[Aatos Jalo]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Creating a NES emulator]]></title>
-    <link href="http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/"/>
+    <link href="https://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/"/>
     <updated>2015-05-31T21:24:35+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator</id>
+    <id>https://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator</id>
     <content type="html"><![CDATA[<p>I read an
 <a href="https://medium.com/@fogleman/i-made-an-nes-emulator-here-s-what-i-learned-about-the-original-nintendo-2e078c9b28fe">interesting post</a>
 about NES internals and its emulation and I immediately wanted to create my own
@@ -79,9 +79,9 @@ some time and I was able to even draw some sprites to the screen!</p>
   
   <entry>
     <title type="html"><![CDATA[GCC Extensions]]></title>
-    <link href="http://www.aatosjalo.com/blog/2015/04/04/gcc-extensions/"/>
+    <link href="https://www.aatosjalo.com/blog/2015/04/04/gcc-extensions/"/>
     <updated>2015-04-04T17:58:21+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2015/04/04/gcc-extensions</id>
+    <id>https://www.aatosjalo.com/blog/2015/04/04/gcc-extensions</id>
     <content type="html"><![CDATA[<p>I have been using GCC quite much, but I haven&rsquo;t really ever used its extensions
 (except some C99 features in C90). Recently, I stumbled upon the documentation
 of all the
@@ -346,9 +346,9 @@ from <a href="https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html#C-Extensions"
   
   <entry>
     <title type="html"><![CDATA[Using Twitter API with C]]></title>
-    <link href="http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/"/>
+    <link href="https://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/"/>
     <updated>2015-02-01T19:01:51+02:00</updated>
-    <id>http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c</id>
+    <id>https://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c</id>
     <content type="html"><![CDATA[<p>I wanted once to implement simple twitter integration with one C application.
 Even though everything can be found in <a href="https://dev.twitter.com,">https://dev.twitter.com,</a> having no
 experience in the API (or OAuth, or OpenSSL), it can take some time to get used
@@ -773,9 +773,9 @@ can be found <a href="https://bitbucket.org/aatos/twitter-update/">here</a>.</p>
   
   <entry>
     <title type="html"><![CDATA[Sockets in C]]></title>
-    <link href="http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/"/>
+    <link href="https://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/"/>
     <updated>2014-07-14T16:17:33+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c</id>
+    <id>https://www.aatosjalo.com/blog/2014/07/14/sockets-in-c</id>
     <content type="html"><![CDATA[<p>It has been a while since I have done anything with sockets in C, so I figured I
 should refresh my
 memory. <a href="http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html">Beej</a>
@@ -1014,16 +1014,16 @@ properly closed the socket. So if zero is returned, client didn&rsquo;t send any
 to check the return values and print errors with
 <a href="http://linux.die.net/man/3/perror">perror(3)</a> if you run in to any problems. As
 always, you can download the complete files for the
-<a href="http://aatosjalo.com/downloads/code/client.c">client</a> and the
-<a href="http://aatosjalo.com/downloads/code/server.c">server</a>.</p>
+<a href="https://aatosjalo.com/downloads/code/client.c">client</a> and the
+<a href="https://aatosjalo.com/downloads/code/server.c">server</a>.</p>
 ]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[Understanding Boyer-Moore]]></title>
-    <link href="http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/"/>
+    <link href="https://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/"/>
     <updated>2014-06-30T20:21:25+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore</id>
+    <id>https://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore</id>
     <content type="html"><![CDATA[<p>Boyer-Moore string searching algorithm is very elementary string searching
 algorithm that is probably gone through as a first or second algorithm in every
 string algorithm course. Even though it is a basic algorithm, it doesn&rsquo;t mean
@@ -1398,7 +1398,7 @@ case. But since we are trying to understand how BM works, I think this approach
 is justified since it is easier to understand.</p>
 
 <p>You can find the whole implementation
-<a href="http://aatosjalo.com/downloads/code/bm.c">here</a> with few unit tests. It should
+<a href="https://aatosjalo.com/downloads/code/bm.c">here</a> with few unit tests. It should
 print something like this:</p>
 
 <pre><code class="bash">$ gcc -std=c99 -Wall -Wextra -pedantic -Wno-char-subscripts bm.c &amp;&amp; ./a.exe

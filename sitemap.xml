@@ -1,60 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/</loc>
+    <loc>https://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/</loc>
     <lastmod>2015-05-31T21:24:35+03:00</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/blog/2015/04/04/gcc-extensions/</loc>
+    <loc>https://www.aatosjalo.com/blog/2015/04/04/gcc-extensions/</loc>
     <lastmod>2015-04-04T17:58:21+03:00</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/</loc>
+    <loc>https://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/</loc>
     <lastmod>2015-02-01T19:01:51+02:00</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout/</loc>
+    <loc>https://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout/</loc>
     <lastmod>2015-01-25T12:04:47+02:00</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/</loc>
+    <loc>https://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/</loc>
     <lastmod>2014-07-14T16:17:33+03:00</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/</loc>
+    <loc>https://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/</loc>
     <lastmod>2014-06-30T20:21:25+03:00</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/blog/2014/06/12/hello/</loc>
+    <loc>https://www.aatosjalo.com/blog/2014/06/12/hello/</loc>
     <lastmod>2014-06-12T23:32:04+03:00</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/</loc>
+    <loc>https://www.aatosjalo.com/</loc>
     <lastmod>2016-04-02T12:32:28+03:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/archives/</loc>
+    <loc>https://www.aatosjalo.com/archives/</loc>
     <lastmod>2016-04-02T12:32:28+03:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/blog/</loc>
+    <loc>https://www.aatosjalo.com/blog/</loc>
     <lastmod>2016-04-02T12:32:28+03:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://www.aatosjalo.com/blog/archives/</loc>
+    <loc>https://www.aatosjalo.com/blog/archives/</loc>
     <lastmod>2016-04-02T12:32:28+03:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

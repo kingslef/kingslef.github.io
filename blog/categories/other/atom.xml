@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: other | Aatos Jalo]]></title>
-  <link href="http://www.aatosjalo.com/blog/categories/other/atom.xml" rel="self"/>
-  <link href="http://www.aatosjalo.com/"/>
+  <link href="https://www.aatosjalo.com/blog/categories/other/atom.xml" rel="self"/>
+  <link href="https://www.aatosjalo.com/"/>
   <updated>2016-04-02T12:32:28+03:00</updated>
-  <id>http://www.aatosjalo.com/</id>
+  <id>https://www.aatosjalo.com/</id>
   <author>
     <name><![CDATA[Aatos Jalo]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Adding Finnish alphabets to US keyboard layout]]></title>
-    <link href="http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout/"/>
+    <link href="https://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout/"/>
     <updated>2015-01-25T12:04:47+02:00</updated>
-    <id>http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout</id>
+    <id>https://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout</id>
     <content type="html"><![CDATA[<p>I don&rsquo;t like Finnish keyboard layout that much. Way too many characters require
 three keys to be pressed simultaneously. This is especially annoying when
 programming, since to get, e.g., different types of brackets, you have to change
@@ -44,7 +44,7 @@ needed those capitalized and I could manage those rare occasions with <code>M-c<
 <p>Modifying keyboard layout in Windows requires <a href="https://msdn.microsoft.com/en-us/goglobal/bb964665.aspx">Microsoft Keyboard Layout Creator</a>
 which is quite straightforward to use. There you can load the US layout and
 change the extra key to whatever you want. You can find the source file for MKLC
-<a href="http://aatosjalo.com/downloads/us-ae.klc">here</a> or even the ready-made installer <a href="http://aatosjalo.com/downloads/us-ae-oe.zip">here</a>.</p>
+<a href="https://aatosjalo.com/downloads/us-ae.klc">here</a> or even the ready-made installer <a href="https://aatosjalo.com/downloads/us-ae-oe.zip">here</a>.</p>
 
 <p>In Linux this is even easier. With <code>xmodmap</code> you can modify your current X
 keyboard bindings. By doing <code>xmodmap -pke &gt; ~/.Xmodmap</code>, you can dump your
@@ -75,9 +75,9 @@ by modifying the same file. For doing that on Windows, I have used
   
   <entry>
     <title type="html"><![CDATA[Hello]]></title>
-    <link href="http://www.aatosjalo.com/blog/2014/06/12/hello/"/>
+    <link href="https://www.aatosjalo.com/blog/2014/06/12/hello/"/>
     <updated>2014-06-12T23:32:04+03:00</updated>
-    <id>http://www.aatosjalo.com/blog/2014/06/12/hello</id>
+    <id>https://www.aatosjalo.com/blog/2014/06/12/hello</id>
     <content type="html"><![CDATA[<p>This is the first post. I&rsquo;ll be writing about programming and somehow
 related areas that I&rsquo;m interested in and want to learn more. Basically
 I&rsquo;ll document what I have done and learned, mostly for myself, but if

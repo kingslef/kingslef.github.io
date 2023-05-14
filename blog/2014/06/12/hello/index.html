@@ -1,0 +1,226 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<script data-cfasync="false" type="text/javascript" src="//use.typekit.net/axj3cfp.js"></script>
+	<script data-cfasync="false" type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	<meta charset="utf-8">
+	<title>Hello  | Aatos Jalo</title>
+
+<meta name="author" content="Aatos Jalo"> 
+
+<meta name="description" content="This is the first post. I&rsquo;ll be writing about programming and somehow
+related areas that I&rsquo;m interested in and want to learn more. &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Aatos Jalo" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery.fancybox.pack.js"></script>
+
+<script language="Javascript" type="text/javascript">
+$(document).ready(
+  function() {
+    (function($) {
+      $(".fancybox[data-content-id]").each(function() {
+        this.href = $(this).data('content-id');
+      });
+      $(".fancybox").fancybox({
+        beforeLoad: function() {
+          var el, 
+              id = $(this.element).data('title-id');
+
+          if (id) {
+            el = $('#' + id);
+
+            if (el.length) {
+              this.title = el.html();
+            }
+          }
+          if ($(this).data('content')) {
+            this.content = $(this).data('content');
+          }
+        },
+        helpers: {
+          title: {
+            type: 'inside'
+          }
+        }
+      });
+    })(jQuery);
+  }
+);
+</script>
+
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Aatos Jalo</a></h1>
+<h4></h4>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:www.aatosjalo.com">
+			</form>
+		</div>
+	</div>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Hello</h2>
+	<div class="entry-content"><p>This is the first post. I&rsquo;ll be writing about programming and somehow
+related areas that I&rsquo;m interested in and want to learn more. Basically
+I&rsquo;ll document what I have done and learned, mostly for myself, but if
+someone manages to get here by googling, it&rsquo;s even better. At least
+for the summer I should have some time to spend on this, but after
+that the amount of posts will decrease.</p>
+
+<!-- more -->
+
+
+<p>For the first real post I will write about Boyer-Moore string
+searching algorithm. When I implemented it, I couldn&rsquo;t find any decent
+explanation about the implementation of the good suffix rule. The
+basics behind BM are quite easy to understand but the implementation
+itself is not so straightforward. By writing about it, I&rsquo;ll see if I
+really understood it.</p>
+
+<p>Next, I would like to experiment a little with <a href="http://www.linuxfromscratch.org/">Linux from scratch</a>. I have used many different
+Linux distributions, but I don&rsquo;t have a clue what is required for a
+working system after you have the kernel image. I have been using
+Emacs for awhile, and it would be nice to try to setup Linux with as
+few libraries and applications as possible and just use Emacs for
+everything (as a terminal, shell etc.). I think it wouldn&rsquo;t be very
+usable for the long run since it would miss a lot of modern features
+but something like writing and uploading blog post on it should be
+possible.</p>
+
+<p>I chose <a href="http://octopress.org/">Octopress</a> for my blogging needs since
+it seems to be quite lightweight and just what I need (and of course,
+who doesn&rsquo;t like Markdown?). It doesn&rsquo;t require anything on the server
+side (except SSH access for easier deployment) and writing new posts
+seems to be easy. I don&rsquo;t really know anything about blogging
+platforms at this point and at first I thought that I have to use
+Wordpress or Joomla which might have been little too heavyweight. As a
+web hosting provider I chose <a href="https://www.webhotelli.fi/">Webhotelli.fi</a>
+because it was quite cheap and offered SSH with their smallest plan
+where providers only include SSH with more expensive plans (i.e. buy
+more disk space to get SSH).</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-12T23:32:04+03:00" pubdate data-updated="true"></time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/other/'>other</a>
+
+</div>
+
+
+	
+		<span class="comments"><a href="/blog/2014/06/12/hello/#disqus_thread">Comments</a></span>
+	
+</div></article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+	
+	
+	
+<!---	<a class="addthis_counter addthis_pill_style"></a> --->
+	</div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Aatos Jalo
+
+<br>
+Powered by Octopress.
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'aatosjalo';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.aatosjalo.com/blog/2014/06/12/hello/';
+        var disqus_url = 'http://www.aatosjalo.com/blog/2014/06/12/hello/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+</body>
+</html>

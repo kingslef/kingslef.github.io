@@ -1,0 +1,883 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<script data-cfasync="false" type="text/javascript" src="//use.typekit.net/axj3cfp.js"></script>
+	<script data-cfasync="false" type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	<meta charset="utf-8">
+	<title>Using Twitter API with C  | Aatos Jalo</title>
+
+<meta name="author" content="Aatos Jalo"> 
+
+<meta name="description" content="I wanted once to implement simple twitter integration with one C application.
+Even though everything can be found in https://dev.twitter.com, having &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Aatos Jalo" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery.fancybox.pack.js"></script>
+
+<script language="Javascript" type="text/javascript">
+$(document).ready(
+  function() {
+    (function($) {
+      $(".fancybox[data-content-id]").each(function() {
+        this.href = $(this).data('content-id');
+      });
+      $(".fancybox").fancybox({
+        beforeLoad: function() {
+          var el, 
+              id = $(this.element).data('title-id');
+
+          if (id) {
+            el = $('#' + id);
+
+            if (el.length) {
+              this.title = el.html();
+            }
+          }
+          if ($(this).data('content')) {
+            this.content = $(this).data('content');
+          }
+        },
+        helpers: {
+          title: {
+            type: 'inside'
+          }
+        }
+      });
+    })(jQuery);
+  }
+);
+</script>
+
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Aatos Jalo</a></h1>
+<h4></h4>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:www.aatosjalo.com">
+			</form>
+		</div>
+	</div>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Using Twitter API With C</h2>
+	<div class="entry-content"><p>I wanted once to implement simple twitter integration with one C application.
+Even though everything can be found in <a href="https://dev.twitter.com,">https://dev.twitter.com,</a> having no
+experience in the API (or OAuth, or OpenSSL), it can take some time to get used
+to. Here is a small guide of posting a tweet using C and OpenSSL.</p>
+
+<!-- more -->
+
+
+<h2>1. Obtain the consumer tokens</h2>
+
+<p>First you&rsquo;ll need consumer key and secret for your twitter application. This
+will identify your application to twitter.</p>
+
+<p>To receive keys for your application, you need to create it first at
+<a href="https://apps.twitter.com">https://apps.twitter.com</a>. Application will start
+with read-only permissions, which you want to change to read and write to be
+able to post updates. That will require you to give your phone number to
+Twitter.</p>
+
+<p>This will give you keys such as:</p>
+
+<pre><code>consumer key: xvz1evFS4wEEPTGEFPHBog
+consumer secret: kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw
+</code></pre>
+
+<h2>2. Obtain the access tokens</h2>
+
+<p>These tokens gives your application a permission to post updates on behalf of a
+twitter user. Basically the account needs to give permissions for an application
+and let it post on its behalf.</p>
+
+<p>There are a few ways to do this. It needs to be done only once per account and
+application, so I skipped some corners here: I used <a href="http://www.tweepy.org/">Tweepy</a>
+which could generate the tokens quite easily. If you want to do this yourself,
+<a href="https://dev.twitter.com/oauth/pin-based">PIN-based authentication</a> would be the way to go.
+If the account that you are posting with is the also the owner of the application,
+you can also generate the access tokens directly from the application management.</p>
+
+<p>In the end, you should have two keys like this:</p>
+
+<pre><code>access token: k370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb
+access token secret: LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE
+</code></pre>
+
+<h2>3. Percent-encode the status</h2>
+
+<p>Let&rsquo;s say that you want to post <code>Hello from Aatosjalo.com!</code>. First the message
+needs to be
+<a href="http://tools.ietf.org/html/rfc3986#section-2.1">percent-encoded</a>. So all
+reserved characters should be transformed to <code>%&lt;byte0&gt;&lt;byte1&gt;</code>, e.g. ASCII
+character <code></code> (0x20) is percent-encoded to <code>%20</code>. In C, that could be something
+like the following:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* Does character c need percent-encoding or is it an unreserved character? */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">need_percent_encoding</span><span class="p">(</span><span class="kt">char</span> <span class="n">c</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">!</span><span class="p">(</span><span class="n">isalnum</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">c</span><span class="p">)</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;-&#39;</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;.&#39;</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;_&#39;</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;~&#39;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Percent-encode (or URL encode) given string. There should be enough room in</span>
+</span><span class='line'><span class="cm"> * the str (three times uncoded characters). */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">percent_encode</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">need_percent_encoding</span><span class="p">(</span><span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* Make room for two characters. */</span>
+</span><span class='line'>            <span class="n">memmove</span><span class="p">(</span><span class="n">str</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="n">str</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">str</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>            <span class="cm">/* Write &#39;%&#39; and two bytes of which the character consists of. */</span>
+</span><span class='line'>            <span class="kt">char</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+</span><span class='line'>            <span class="n">snprintf</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;%X&quot;</span><span class="p">,</span> <span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">str</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>            <span class="n">snprintf</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;%X&quot;</span><span class="p">,</span> <span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xf</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">str</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>            <span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;%&#39;</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">str</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then you should have your status something like:</p>
+
+<pre><code>status: Hello%20from%20Aatosjalo.com%21
+</code></pre>
+
+<h2>4. Learn Base 64 Encoding</h2>
+
+<p>Twitter expects a certain signature with each status update that needs to be
+<a href="http://tools.ietf.org/html/rfc4648#section-4">Base 64 encoded</a>. I&rsquo;m no expert
+with OpenSSL, but following a few examples I came up with:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">base64_encode</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">msg_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* This could be improved. Currently it allocates bit too much. Times three</span>
+</span><span class='line'><span class="cm">     * is required for the percent encoding but times four is just overestimate</span>
+</span><span class='line'><span class="cm">     * of base64 encoding. */</span>
+</span><span class='line'>    <span class="kt">size_t</span> <span class="n">signature_len</span> <span class="o">=</span> <span class="n">msg_len</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">encoded</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">signature_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">encoded</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* From https://www.openssl.org/docs/crypto/BIO_f_base64.html */</span>
+</span><span class='line'>    <span class="n">BIO</span> <span class="o">*</span><span class="n">b64</span> <span class="o">=</span> <span class="n">BIO_new</span><span class="p">(</span><span class="n">BIO_f_base64</span><span class="p">());</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">b64</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">(</span><span class="n">encoded</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Bio base64 writes to a stream for some reason, so open a stream to the</span>
+</span><span class='line'><span class="cm">     * buffer. */</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">stream</span> <span class="o">=</span> <span class="n">fmemopen</span><span class="p">(</span><span class="n">encoded</span><span class="p">,</span> <span class="n">signature_len</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">stream</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">(</span><span class="n">encoded</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">b64</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">BIO</span> <span class="o">*</span><span class="n">bio</span> <span class="o">=</span> <span class="n">BIO_new_fp</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">BIO_NOCLOSE</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_push</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_set_flags</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="n">BIO_FLAGS_BASE64_NO_NL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_write</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">msg_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_flush</span><span class="p">(</span><span class="n">b64</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">b64</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">encoded</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>5. Create the signature</h2>
+
+<p>Twitter users OAuth and HTTPS for its APIs. This is already documented quite
+nicely in
+<a href="https://dev.twitter.com/oauth/overview/creating-signatures">Creating Signatures</a>,
+so I won&rsquo;t repeat everything here.</p>
+
+<p>First you&rsquo;ll need a nonce that is used in the signature. It should be relatively
+random and you shouldn&rsquo;t use a nonce twice (even for prototyping). If you are
+using OpenSSL, you could do something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* Generate nonce used as oauth_nonce. */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">generate_nonce</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">nonce</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">RAND_bytes</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">nonce</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">nonce</span><span class="p">)))</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">encoded_nonce</span> <span class="o">=</span> <span class="n">base64_encode</span><span class="p">(</span><span class="n">nonce</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">nonce</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">encoded_nonce</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">size_t</span> <span class="n">nonce_len</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">encoded_nonce</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nonce_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">isalnum</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">encoded_nonce</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* Replace non-alphanumerics by arbitrary &#39;a&#39; since they should not</span>
+</span><span class='line'><span class="cm">             * be present in the nonce. */</span>
+</span><span class='line'>            <span class="n">encoded_nonce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;a&#39;</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">encoded_nonce</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Nonce shouldn&rsquo;t have any non-alphanumeric characters, but maybe you can figure out nicer
+way to get rid of those yourself.</p>
+
+<p>Signature also expects a timestamp, but that can be retrieved quite easily with
+time(2):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="kt">time_t</span> <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'><span class="kt">char</span> <span class="n">timestamp</span><span class="p">[</span><span class="mi">11</span><span class="p">];</span>
+</span><span class='line'><span class="n">snprintf</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">timestamp</span><span class="p">),</span> <span class="s">&quot;%zu&quot;</span><span class="p">,</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">t</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we should have all the parameters for the signature. Next we have to hash
+it with
+<a href="http://en.wikipedia.org/wiki/Hash-based_message_authentication_code">HMAC-SHA1</a>.</p>
+
+<p>One simple implementation of that using OpenSSL would be:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">hmac_sha1_encode</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">hmac_key</span><span class="p">,</span>
+</span><span class='line'>                                       <span class="kt">unsigned</span> <span class="kt">int</span> <span class="o">*</span><span class="n">result_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">result_len</span> <span class="o">=</span> <span class="mi">20</span><span class="p">;</span> <span class="cm">/* Should be always 20 bytes. */</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="o">*</span><span class="n">result_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">HMAC_CTX</span> <span class="n">ctx</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Example from http://stackoverflow.com/a/245335. */</span>
+</span><span class='line'>    <span class="n">HMAC_CTX_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">HMAC_Init_ex</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="n">hmac_key</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">strlen</span><span class="p">(</span><span class="n">hmac_key</span><span class="p">),</span> <span class="n">EVP_sha1</span><span class="p">(),</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">HMAC_Update</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">data</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">data</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">HMAC_Final</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">result_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">HMAC_CTX_cleanup</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we are ready to build the signature:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* Compute the signature from given parameters as required by the OAuth. */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">compute_signature</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">timestamp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">nonce</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">status</span><span class="p">,</span>
+</span><span class='line'>                               <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">consumer_key</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">auth_token</span><span class="p">,</span>
+</span><span class='line'>                               <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">hmac_key</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">signature_base</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">buf_size</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">signature_base</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Encode the status again. */</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">encoded_status</span><span class="p">[</span><span class="n">strlen</span><span class="p">(</span><span class="n">status</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">snprintf</span><span class="p">(</span><span class="n">encoded_status</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">encoded_status</span><span class="p">),</span> <span class="s">&quot;%s&quot;</span><span class="p">,</span> <span class="n">status</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">percent_encode</span><span class="p">(</span><span class="n">encoded_status</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">snprintf</span><span class="p">(</span><span class="n">signature_base</span><span class="p">,</span> <span class="n">buf_size</span><span class="p">,</span> <span class="s">&quot;POST&amp;https%%3A%%2F%%2Fapi.twitter.com&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%2F1.1%%2Fstatuses%%2Fupdate.json&amp;&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;oauth_consumer_key%%3D%s%%26oauth_nonce%%3D%s&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%26oauth_signature_method%%3DHMAC-SHA1&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%26oauth_timestamp%%3D%s%%26oauth_token%%3D%s&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%26oauth_version%%3D1.0&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%26status%%3D%s&quot;</span><span class="p">,</span>
+</span><span class='line'>                       <span class="n">consumer_key</span><span class="p">,</span> <span class="n">nonce</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">auth_token</span><span class="p">,</span> <span class="n">encoded_status</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">ret</span> <span class="o">&gt;</span> <span class="n">buf_size</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">(</span><span class="n">signature_base</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">encoded_len</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">hmac_encoded</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">hmac_sha1_encode</span><span class="p">(</span><span class="n">signature_base</span><span class="p">,</span> <span class="n">hmac_key</span><span class="p">,</span>
+</span><span class='line'>                                                  <span class="o">&amp;</span><span class="n">encoded_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">signature_base</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">hmac_encoded</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">encoded</span> <span class="o">=</span> <span class="n">base64_encode</span><span class="p">(</span><span class="n">hmac_encoded</span><span class="p">,</span> <span class="n">encoded_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">hmac_encoded</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">encoded</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">percent_encode</span><span class="p">(</span><span class="n">encoded</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The parameters should be quite self-explanatory expect the HMAC key. HMAC key is
+formed from the consumer secret and access token secret by concatenating them with
+<code>&amp;</code>. For example, HMAC key in our example would be simply:</p>
+
+<pre><code>kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw&amp;LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE
+</code></pre>
+
+<p>You should note that parameter <code>status</code> is already percent-encoded once, but for
+the signature it should be encoded again.</p>
+
+<p>After these, we need to build our <code>signature_base</code>. It should have the HTTP
+request method (here <code>POST</code>), URL that we are going to use
+(<code>https://api.twitter.com/1.1/statuses/update.json</code>) and then the parameters
+(extra <code>%</code> comes from escaping percent in printf). For more information, see
+<a href="https://dev.twitter.com/oauth/overview/creating-signatures">Creating Signatures</a>.</p>
+
+<p>Now we should have everything and we can do the HMAC-SHA1 hashing. The hash
+should finally be base64- and percent-encoded and then we have our signature that
+we will use in our HTTP POST.</p>
+
+<h2>6. Create the POST</h2>
+
+<p>Next we have to create the POST, but we should now have all parameters for that
+so it should be easy.</p>
+
+<p>We are posting a status update and the API documentation for that can be found
+<a href="https://dev.twitter.com/rest/reference/post/statuses/update">here</a>. In short,
+the URL is <code>https://api.twitter.com/1.1/statuses/update.json</code> and the only
+required parameter is <code>status</code>. Example of updating status can be found
+<a href="https://dev.twitter.com/oauth/overview/authorizing-requests">here</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">create_post</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">timestamp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">nonce</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">status</span><span class="p">,</span>
+</span><span class='line'>                         <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">signature</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">consumer_key</span><span class="p">,</span>
+</span><span class='line'>                         <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">auth_token</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">post</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">buf_size</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">post</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">snprintf</span><span class="p">(</span><span class="n">post</span><span class="p">,</span> <span class="n">buf_size</span><span class="p">,</span> <span class="s">&quot;POST /1.1/statuses/update.json HTTP/1.1</span><span class="se">\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;User-Agent: LightBot</span><span class="se">\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;Host: api.twitter.com</span><span class="se">\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;Authorization: OAuth oauth_consumer_key=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, oauth_nonce=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, &quot;</span>
+</span><span class='line'>                       <span class="s">&quot;oauth_signature=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, oauth_signature_method=</span><span class="se">\&quot;</span><span class="s">HMAC-SHA1</span><span class="se">\&quot;</span><span class="s">, &quot;</span>
+</span><span class='line'>                       <span class="s">&quot;oauth_timestamp=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, oauth_token=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, oauth_version=</span><span class="se">\&quot;</span><span class="s">1.0</span><span class="se">\&quot;\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;Content-Length: %zu</span><span class="se">\r\n\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;status=%s&quot;</span><span class="p">,</span>
+</span><span class='line'>                       <span class="n">consumer_key</span><span class="p">,</span> <span class="n">nonce</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">auth_token</span><span class="p">,</span>
+</span><span class='line'>                       <span class="n">strlen</span><span class="p">(</span><span class="s">&quot;status=&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span><span class="n">status</span><span class="p">),</span> <span class="n">status</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">ret</span> <span class="o">&gt;=</span> <span class="n">buf_size</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">(</span><span class="n">post</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">post</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The main &lsquo;new&rsquo; thing here is the <code>Authorization</code> parameter which is required by the
+OAuth. Otherwise it&rsquo;s quite straightforward: HTTP method, URL, protocol version,
+user agent (which is just the name of the application) etc.</p>
+
+<h2>7. Sending</h2>
+
+<p>Only thing left is to open a SSL connection to twitter, send the POST and check
+the result. A crude example of doing so:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * Posts given POST to api.twitter.com.</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * From https://thunked.org/programming/openssl-tutorial-client-t11.html and</span>
+</span><span class='line'><span class="cm"> * example in https://www.openssl.org/docs/crypto/BIO_f_ssl.html.</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * This doesn&#39;t verify the server certificate, i.e. it will accept certificates</span>
+</span><span class='line'><span class="cm"> * signed by any CA.</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">send_to_twitter</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">post</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">SSL_CTX</span><span class="o">*</span> <span class="n">ctx</span> <span class="o">=</span> <span class="n">SSL_CTX_new</span><span class="p">(</span><span class="n">SSLv23_client_method</span><span class="p">());</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ctx</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Error creating SSL_CTX</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">BIO</span><span class="o">*</span> <span class="n">bio</span> <span class="o">=</span> <span class="n">BIO_new_ssl_connect</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">bio</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Error creating BIO!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SSL</span><span class="o">*</span> <span class="n">ssl</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">BIO_get_ssl</span><span class="p">(</span><span class="n">bio</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ssl</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ssl</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;BIO_get_ssl failed</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SSL_set_mode</span><span class="p">(</span><span class="n">ssl</span><span class="p">,</span> <span class="n">SSL_MODE_AUTO_RETRY</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_set_conn_hostname</span><span class="p">(</span><span class="n">bio</span><span class="p">,</span> <span class="s">&quot;api.twitter.com:https&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">BIO_do_connect</span><span class="p">(</span><span class="n">bio</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Failed to connect!&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">BIO_do_handshake</span><span class="p">(</span><span class="n">bio</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Failed to do SSL handshake!&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1024</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">};</span>
+</span><span class='line'>    <span class="n">BIO_puts</span><span class="p">(</span><span class="n">bio</span><span class="p">,</span> <span class="n">post</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">read_bytes</span> <span class="o">=</span> <span class="n">BIO_read</span><span class="p">(</span><span class="n">bio</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">read_bytes</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">buf</span><span class="p">[</span><span class="n">read_bytes</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">strstr</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="s">&quot;HTTP/1.1 200 OK&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">strstr</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="s">&quot;HTTP/1.1 403 Forbidden&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* Twitter doesn&#39;t allow consecutive duplicates and will respond</span>
+</span><span class='line'><span class="cm">             * with 403 in such case. */</span>
+</span><span class='line'>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Twitter responded with 403!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Error occurred! Received:</span><span class="se">\n</span><span class="s">&quot;</span>
+</span><span class='line'>                   <span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Read failed!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Interesting return codes here are 200 and 403. Former will be sent if the update
+was successful, but the latter will be sent if we have reached rate limit or send
+a duplicate update as seen in the description of the API.</p>
+
+<p>Now you should have your tweet posted on your account! As always, the full code
+can be found <a href="https://bitbucket.org/aatos/twitter-update/">here</a>.</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-01T19:01:51+02:00" pubdate data-updated="true"></time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/programming/'>programming</a>
+
+</div>
+
+
+	
+		<span class="comments"><a href="/blog/2015/02/01/using-twitter-api-with-c/#disqus_thread">Comments</a></span>
+	
+</div></article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+	
+	
+	
+<!---	<a class="addthis_counter addthis_pill_style"></a> --->
+	</div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Aatos Jalo
+
+<br>
+Powered by Octopress.
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'aatosjalo';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/';
+        var disqus_url = 'http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+</body>
+</html>

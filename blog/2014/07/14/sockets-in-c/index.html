@@ -1,0 +1,535 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<script data-cfasync="false" type="text/javascript" src="//use.typekit.net/axj3cfp.js"></script>
+	<script data-cfasync="false" type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	<meta charset="utf-8">
+	<title>Sockets in C  | Aatos Jalo</title>
+
+<meta name="author" content="Aatos Jalo"> 
+
+<meta name="description" content="It has been a while since I have done anything with sockets in C, so I figured I
+should refresh my
+memory. Beej
+already has a great guide to network &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Aatos Jalo" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery.fancybox.pack.js"></script>
+
+<script language="Javascript" type="text/javascript">
+$(document).ready(
+  function() {
+    (function($) {
+      $(".fancybox[data-content-id]").each(function() {
+        this.href = $(this).data('content-id');
+      });
+      $(".fancybox").fancybox({
+        beforeLoad: function() {
+          var el, 
+              id = $(this.element).data('title-id');
+
+          if (id) {
+            el = $('#' + id);
+
+            if (el.length) {
+              this.title = el.html();
+            }
+          }
+          if ($(this).data('content')) {
+            this.content = $(this).data('content');
+          }
+        },
+        helpers: {
+          title: {
+            type: 'inside'
+          }
+        }
+      });
+    })(jQuery);
+  }
+);
+</script>
+
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Aatos Jalo</a></h1>
+<h4></h4>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:www.aatosjalo.com">
+			</form>
+		</div>
+	</div>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Sockets in C</h2>
+	<div class="entry-content"><p>It has been a while since I have done anything with sockets in C, so I figured I
+should refresh my
+memory. <a href="http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html">Beej</a>
+already has a great guide to network programming, so I&rsquo;ll try to make a very
+simple and small introduction. If you want to know more, you should refer to his
+guide.</p>
+
+<!-- more -->
+
+
+<p>To be able to send (or receive) something through sockets, you need perform
+at least two steps:</p>
+
+<ol>
+<li>Create a socket with <a href="http://linux.die.net/man/3/socket">socket(3)</a>.</li>
+<li>Attach an address to it by:
+
+<ul>
+<li>binding (<a href="http://linux.die.net/man/3/bind">bind(3)</a>) a local address to it (if you are
+the server),</li>
+<li>or connecting (<a href="http://linux.die.net/man/3/connect">connect(3)</a>) it to a destination
+address (usually as a client).</li>
+</ul>
+</li>
+</ol>
+
+
+<p>In addition to these, you have to perform other steps if you are the server:</p>
+
+<ol>
+<li>Allow the socket to receive incoming connections by using <a href="http://linux.die.net/man/3/listen">listen(3)</a></li>
+<li>and finally wait for a new client with <a href="http://linux.die.net/man/3/accept">accept(3)</a>.</li>
+</ol>
+
+
+<p>After these are successfully completed, you can use
+<a href="http://linux.die.net/man/3/recv">recv(3)</a> and
+<a href="http://linux.die.net/man/3/send">send(3)</a> to interact with the remote end. The
+steps above are valid for TCP sockets; with UDP you don&rsquo;t have to do all of them
+since it uses connectionless communication. After the communication is done, you
+should close the socket using <a href="http://linux.die.net/man/3/close">close(3)</a>.</p>
+
+<p>Let&rsquo;s start by creating a socket for a client application. The prototype is:</p>
+
+<figure class='code'><figcaption><span>socket function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">socket</span><span class="p">(</span><span class="kt">int</span> <span class="n">domain</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">protocol</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>where <code>domain</code> is basically <code>AF_INET</code> for IPv4 connections and <code>AF_INET6</code> for
+IPv6, <code>type</code> is <code>SOCK_STREAM</code> for TCP connections and <code>SOCK_DGRAM</code> for UDP. By
+leaving <code>protocol</code> to <code>0</code>, we say that we support only one protocol family and
+protocol is then deduced from the <code>domain</code>. Naturally there are more options
+than these and you can read more from the man-pages. The return value is a file
+descriptor to newly created socket (in a successful case). So to create an IPv4
+socket for TCP communication, we could do:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">sock_fd</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">sock_fd</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;socket failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we need to assign an address to the socket by using <code>bind</code> or <code>connect</code>,
+which are pretty similar to each other:</p>
+
+<figure class='code'><figcaption><span>bind and connect function prototypes</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">bind</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span>
+</span><span class='line'>         <span class="kt">socklen_t</span> <span class="n">addrlen</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">connect</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span>
+</span><span class='line'>            <span class="kt">socklen_t</span> <span class="n">addrlen</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here the <code>sockfd</code> is the file descriptor returned by the <code>socket</code>, <code>addr</code> is a
+pointer to an address in the network format and <code>addrlen</code> is its length. In both
+cases return value is zero on success and <code>-1</code> on error.</p>
+
+<p>You would basically have your IP address as a string, e.g. <code>"127.0.0.1"</code> which
+is in printable format. To get a network format from that, you would most likely
+use function like <a href="http://linux.die.net/man/3/inet_pton">inet_pton(3)</a>:</p>
+
+<figure class='code'><figcaption><span>inet_pton function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">inet_pton</span><span class="p">(</span><span class="kt">int</span> <span class="n">af</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">dst</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With <code>inet_pton</code> you transform printable (<strong><em>p</em></strong>ton) address to network address
+format (pto<strong><em>n</em></strong>), for example like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">struct</span> <span class="n">sockaddr_in</span> <span class="n">sock_addr</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">inet_pton</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="s">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_addr</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;inet_pton failed: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then after setting the port (using <code>6000</code> as an example) and the family (IPv4),</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_family</span> <span class="o">=</span> <span class="n">AF_INET</span><span class="p">;</span>
+</span><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_port</span> <span class="o">=</span> <span class="n">htons</span><span class="p">(</span><span class="mi">6000</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>you could connect the previously created <code>sock_fd</code> to the destination address:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">ret</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">sock_addr</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">sock_addr</span><span class="p">));</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;connect failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that the socket is created and connected to the destination address, we
+can send something (with <a href="http://linux.die.net/man/3/send">send(3)</a>):</p>
+
+<figure class='code'><figcaption><span>send function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">ssize_t</span> <span class="nf">send</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">length</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here <code>socket</code> is the <code>sock_fd</code> that we have connected, <code>buffer</code> contains the
+message to be sent and <code>length</code> is its length in bytes. <code>flags</code> argument is not
+interesting for us, so we can leave it as <code>0</code>. <code>send</code> will return the number of
+bytes sent or <code>-1</code> on failure. But basically it will either send all the bytes
+or fail with <code>-1</code>, so you can just check that the return value is not negative.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">const</span> <span class="kt">char</span> <span class="n">buf</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;test string&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">ssize_t</span> <span class="n">sent_bytes</span> <span class="o">=</span> <span class="n">send</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">sent_bytes</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;send failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To create the server application, we will create the socket same way as before
+but now we will use <code>bind</code> instead of <code>connect</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">sock_fd</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">sock_fd</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;socket failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">struct</span> <span class="n">sockaddr_in</span> <span class="n">sock_addr</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_family</span> <span class="o">=</span> <span class="n">AF_INET</span><span class="p">;</span>
+</span><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_addr</span><span class="p">.</span><span class="n">s_addr</span> <span class="o">=</span> <span class="n">INADDR_ANY</span><span class="p">;</span>
+</span><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_port</span> <span class="o">=</span> <span class="n">htons</span><span class="p">(</span><span class="mi">6000</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">bind</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">sock_addr</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">sock_addr</span><span class="p">));</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;bind failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We use constant <code>INADDR_ANY</code> as an address to say that we want to bind to all
+interfaces on the machine (i.e. not restricting us only to &ldquo;127.0.0.1&rdquo; but to
+allow packets to arrive in any address assigned to us). Next we have to inform
+the operating system that we are interested in incoming connections by using
+<code>listen</code>:</p>
+
+<figure class='code'><figcaption><span>listen function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">listen</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="kt">int</span> <span class="n">backlog</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here <code>socket</code> is the socket file descriptor that we have bound and <code>backlog</code> is
+basically means how many clients there can be queued for this socket. We are
+expecting only one client now so let&rsquo;s just use <code>1</code> as a <code>backlog</code>. <code>listen</code>
+returns <code>0</code> on success and <code>-1</code> on failure, so remember to check the return
+value also here.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">ret</span> <span class="o">=</span> <span class="n">listen</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;listen failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The actual waiting for a new client happens in <code>accept</code>:</p>
+
+<figure class='code'><figcaption><span>accept function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">accept</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="kr">restrict</span> <span class="n">address</span><span class="p">,</span>
+</span><span class='line'>           <span class="kt">socklen_t</span> <span class="o">*</span><span class="kr">restrict</span> <span class="n">address_len</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here <code>socket</code> is the file descriptor that has been bound and listened, <code>address</code>
+is a structure where the address of connected client is stored and <code>address_len</code>
+is its length. Last two arguments are optional, so if you are not interested in
+client&rsquo;s address, you may just give <code>NULL</code> to both. Return value is a socket
+file descriptor or <code>-1</code> on failure. Notice though that <code>accept</code> will block until
+a client arrives, meaning that this function call will not return until someone
+connects to our server.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>    <span class="kt">int</span> <span class="n">client_sock</span> <span class="o">=</span> <span class="n">accept</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">client_sock</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">perror</span><span class="p">(</span><span class="s">&quot;accept failed&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we can use <code>client_sock</code> for sending and receiving. Since our client program
+sends a message to the server, we might as well use <code>recv</code> here and print the
+received bytes:</p>
+
+<figure class='code'><figcaption><span>recv function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">ssize_t</span> <span class="nf">recv</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">length</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>recv</code> function prototype is basically the same as with <code>send</code>. <code>flags</code> can be
+omitted also here for now. Only difference is the return value; <code>recv</code> will
+return the length of the message received, <code>-1</code> on failure or <code>0</code> if client has
+properly closed the socket. So if zero is returned, client didn&rsquo;t send anything.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>    <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">ssize_t</span> <span class="n">received_bytes</span> <span class="o">=</span> <span class="n">recv</span><span class="p">(</span><span class="n">client_sock</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">received_bytes</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">perror</span><span class="p">(</span><span class="s">&quot;recv failed&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">close</span><span class="p">(</span><span class="n">client_sock</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">received_bytes</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;client closed the connection</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="cm">/* Someting was received, print it. */</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;received: &#39;&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">ssize_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">received_bytes</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">putchar</span><span class="p">(</span><span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">client_sock</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And that&rsquo;s all there is to get a simple client/server application in C. Remember
+to check the return values and print errors with
+<a href="http://linux.die.net/man/3/perror">perror(3)</a> if you run in to any problems. As
+always, you can download the complete files for the
+<a href="http://aatosjalo.com/downloads/code/client.c">client</a> and the
+<a href="http://aatosjalo.com/downloads/code/server.c">server</a>.</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-14T16:17:33+03:00" pubdate data-updated="true"></time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/programming/'>programming</a>
+
+</div>
+
+
+	
+		<span class="comments"><a href="/blog/2014/07/14/sockets-in-c/#disqus_thread">Comments</a></span>
+	
+</div></article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+	
+	
+	
+<!---	<a class="addthis_counter addthis_pill_style"></a> --->
+	</div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Aatos Jalo
+
+<br>
+Powered by Octopress.
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'aatosjalo';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/';
+        var disqus_url = 'http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+</body>
+</html>

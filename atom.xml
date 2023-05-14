@@ -1,0 +1,2266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Aatos Jalo]]></title>
+  <link href="http://www.aatosjalo.com/atom.xml" rel="self"/>
+  <link href="http://www.aatosjalo.com/"/>
+  <updated>2016-04-02T12:32:28+03:00</updated>
+  <id>http://www.aatosjalo.com/</id>
+  <author>
+    <name><![CDATA[Aatos Jalo]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Creating a NES emulator]]></title>
+    <link href="http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/"/>
+    <updated>2015-05-31T21:24:35+03:00</updated>
+    <id>http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator</id>
+    <content type="html"><![CDATA[<p>I read an
+<a href="https://medium.com/@fogleman/i-made-an-nes-emulator-here-s-what-i-learned-about-the-original-nintendo-2e078c9b28fe">interesting post</a>
+about NES internals and its emulation and I immediately wanted to create my own
+emulator. There is already great documentation about NES, so I will be only writing about
+my process and giving some links to learn more.</p>
+
+<!-- more -->
+
+
+<p>I started by trying to understand the 6502
+assembly. <a href="http://nesdev.com/6502guid.txt">This</a> gives nice overview on 6502
+instructions and registers. <a href="http://nesdev.com/">NesDev</a> has also some other nice
+(but apparently outdated) guides.</p>
+
+<p>Next I went to learn about NES programming and I found a good
+<a href="http://nintendoage.com/forum/messageview.cfm?catid=22&amp;threadid=7155">tutorial</a>. It
+explains quite nicely how to interact with the picture processing unit (PPU),
+how the ROM is partitioned and so on. Some details are on a quite high level, so
+more info can be found e. g. in
+<a href="http://wiki.nesdev.com/w/index.php/NES_reference_guide">NesDev Wiki</a>. For
+instance, the <a href="http://wiki.nesdev.com/w/index.php/PPU_registers">PPU registers</a>
+are explained in much more depth.</p>
+
+<p>I found an <code>bmp2chr</code> converter
+(<a href="http://bobrost.com/nes/files/nes_sprite_tools_2004_03_18.zip">sources here</a>),
+so I managed to create my own sprites. First I drew tile map as BMP using
+<a href="http://www.aseprite.org/">Asprite</a>, then converted that to CHR. As an
+assembler, I used <code>nesasm3</code>
+(<a href="http://www.nespowerpak.com/nesasm/nesasmsrc.zip">sources</a>). Windows binaries
+were quite easy to come by, but sources (for example using in Linux) were a bit
+harder. For emulating first trials, I used
+<a href="http://www.fceux.com/web/download.html">FCEUX Win</a>. There are many
+cross-platform emulators, but I found debugger only in Windows version of
+<code>FCEUX</code>, so I had to use Wine for that.</p>
+
+<p><img src="http://www.aatosjalo.com/images/posts/helloworld.gif" title="My first ROM!" ></p>
+
+<p>At this point I created two simple NES ROMs. First one had few sprites moving
+across the screen (above), and the second one was a two-player pong game
+(below). Sources can be found in
+<a href="https://bitbucket.org/aatos/nes-demos/src">Bitbucket</a> (those could be
+improved - to say the least).</p>
+
+<p><img src="http://www.aatosjalo.com/images/posts/pong.gif" title="Pong game" ></p>
+
+<p>I decided not to handle sounds at this point, so now I was ready for starting
+the emulator itself. After reading the
+<a href="http://wiki.nesdev.com/w/index.php/INES">header</a>, I started handling the
+<a href="http://www.obelisk.demon.co.uk/6502/reference.html">opcodes</a>. Fast-forward
+some time and I was able to even draw some sprites to the screen!</p>
+
+<p><img src="http://www.aatosjalo.com/images/posts/simpler.png" title="First ROM emulated" ></p>
+
+<p>There is still much to do, but the sources can be found from
+<a href="https://bitbucket.org/aatos/6502-emulator/src">here</a> (requires <code>clang</code> and
+<code>SFML</code> for the build, and <code>gmock</code> and <code>gtest</code> for the tests).</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[GCC Extensions]]></title>
+    <link href="http://www.aatosjalo.com/blog/2015/04/04/gcc-extensions/"/>
+    <updated>2015-04-04T17:58:21+03:00</updated>
+    <id>http://www.aatosjalo.com/blog/2015/04/04/gcc-extensions</id>
+    <content type="html"><![CDATA[<p>I have been using GCC quite much, but I haven&rsquo;t really ever used its extensions
+(except some C99 features in C90). Recently, I stumbled upon the documentation
+of all the
+<a href="https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html#C-Extensions">extensions</a>,
+so I figured to list few of the special ones here.</p>
+
+<!-- more -->
+
+
+<h2>Function overloading</h2>
+
+<p>By using <code>__typeof__</code> and <code>__builtin_types_compatible_p(type1, type2)</code>, it is
+possible to (kinda) overload functions in C. Let&rsquo;s say for example that you want
+to implement <code>is_equal</code> function, which would work on integers and strings. By
+using <code>__builtin_types_compatible_p</code> you could check what type the given
+parameter is, and then call the appropriate function.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;string.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define is_equal(x, y)                                              \</span>
+</span><span class='line'><span class="cp">    do {                                                            \</span>
+</span><span class='line'><span class="cp">        if (__builtin_types_compatible_p(__typeof__ (x), char[]))   \</span>
+</span><span class='line'><span class="cp">            is_equal_string(x, y);                                  \</span>
+</span><span class='line'><span class="cp">        else if (__builtin_types_compatible_p(__typeof__ (x), int)) \</span>
+</span><span class='line'><span class="cp">            is_equal_int(x, y);                                     \</span>
+</span><span class='line'><span class="cp">    } while (0)</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">is_equal_string</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s: &#39;%s&#39; and &#39;%s&#39; are %sthe same</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>           <span class="n">__func__</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">strcmp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">?</span> <span class="s">&quot;not &quot;</span> <span class="o">:</span> <span class="s">&quot;&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">is_equal_int</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s: &#39;%d&#39; and &#39;%d&#39; are %sthe same</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>           <span class="n">__func__</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">y</span> <span class="o">?</span> <span class="s">&quot;not &quot;</span> <span class="o">:</span> <span class="s">&quot;&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">is_equal</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">is_equal</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="s">&quot;foo&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Cleanup when variable goes out of scope</h2>
+
+<p>With GCC&rsquo;s variable attributes, you can specify a function that is to be called
+when the variable goes out of scope. This function receives a pointer to the
+parameter, so it can be used e.g. to close a file:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">cleanup_file</span><span class="p">(</span><span class="kt">FILE</span> <span class="o">**</span><span class="n">f</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">f</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;closing file</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">fclose</span><span class="p">(</span><span class="o">*</span><span class="n">f</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">func</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span> <span class="n">f</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">cleanup</span><span class="p">(</span><span class="n">cleanup_file</span><span class="p">)))</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;/dev/null&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">f</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">&quot;test string&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">func</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Built-in apply</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">func_without_void</span><span class="p">();</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">func_with_void</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you may (or may not) know, the function declarations above mean quite
+different things in C. The first one accepts any number of arguments (of any
+type) and the second one doesn&rsquo;t accept any arguments at all. Hence, first one
+could be called as (and compilers should consider it valid):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">func_without_void</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>but you cannot really access the variable since you don&rsquo;t give it any name (or
+even type) in the definition. But here comes <code>__builtin_apply</code> and
+<code>__builtin_apply_args</code> to the picture. With <code>__builtin_apply_args</code> you get a
+pointer to arguments given to the function and with <code>__builtin_apply(void
+(*function)(), void *arguments, size_t size)</code>, you can call a different function
+with the arguments. So, for example:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">func_with_args</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;received %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">func_without_void</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">void</span><span class="o">*</span> <span class="n">args</span> <span class="o">=</span> <span class="n">__builtin_apply_args</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">__builtin_apply</span><span class="p">(</span><span class="n">func_with_args</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">func_without_void</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And it prints:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>gcc -std<span class="o">=</span>gnu11 -Wall -Wextra <span class="nb">builtin</span>-args.c -o <span class="nb">builtin</span>-args
+</span><span class='line'><span class="nv">$ </span>./builtin-args
+</span><span class='line'>received 10
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Extended ASM</h2>
+
+<p>You can easily embed assembly instructions to .c file and even read and write C
+variables from assembler (this is quite heavily used in Linux kernel). For
+example, if you would like to read the number of CPU cycles since reset, you
+could write (on x86):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;inttypes.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">get_rdtsc</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="o">*</span> <span class="kr">restrict</span> <span class="n">h</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="o">*</span> <span class="kr">restrict</span> <span class="n">l</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">__asm__</span> <span class="k">volatile</span><span class="p">(</span><span class="s">&quot;rdtsc&quot;</span>
+</span><span class='line'>                     <span class="o">:</span> <span class="s">&quot;=a&quot;</span> <span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">),</span> <span class="s">&quot;=d&quot;</span> <span class="p">(</span><span class="o">*</span><span class="n">h</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">h</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">l</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">get_rdtsc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">l</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;rdtsc: %&quot;</span> <span class="n">PRIu64</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">(((</span><span class="kt">uint64_t</span><span class="p">)</span><span class="n">h</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="n">l</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Nested Functions</h2>
+
+<p>Using GCC, you can actually have functions inside functions.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">func</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="p">(</span><span class="o">**</span><span class="n">func_p</span><span class="p">)(</span><span class="kt">int</span><span class="p">))</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* declare with auto */</span>
+</span><span class='line'>    <span class="k">auto</span> <span class="kt">int</span> <span class="n">func2</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">*</span><span class="n">func_p</span> <span class="o">=</span> <span class="n">func2</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">func2</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Could use variable a if this function wouldn&#39;t be used outside</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">func2</span><span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">func_p</span><span class="p">)(</span><span class="kt">int</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;function with nested function returns %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>           <span class="n">func</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">func_p</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;nested function returns %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>           <span class="n">func_p</span><span class="p">(</span><span class="mi">5</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here, inside <code>func</code>, another function (<code>func2</code>) is first declared and then
+defined. Forward-declaration is not necessary here, but in order to do so, you
+actually must use <code>auto</code> (this is probably the only place where <code>auto</code> is
+needed). <code>func</code> returns a pointer to the nested function so it can also be used
+outside of the function (with some restrictions).</p>
+
+<h2>Case ranges</h2>
+
+<p>You can have a range in a switch-case:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">func</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">switch</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">0</span> <span class="p">...</span> <span class="mi">5</span><span class="o">:</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;less than 6</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">default</span><span class="o">:</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;6 or more</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Forward-declaration of enum</h2>
+
+<p>It is possible to declare an enumeration without specifying its values. There is
+not much that can be done with it, but it seems that it was added so enums would
+be handled similarly as structs or unions. Before this, I didn&rsquo;t even know it is
+forbidden in ISO C.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">enum</span> <span class="n">en</span><span class="p">;</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">func</span><span class="p">(</span><span class="k">const</span> <span class="k">enum</span> <span class="n">en</span> <span class="n">e</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">enum</span> <span class="n">en</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">FIRST</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">SECOND</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">en</span> <span class="n">e</span> <span class="o">=</span> <span class="n">SECOND</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">func</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">func</span><span class="p">(</span><span class="k">enum</span> <span class="n">en</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;enum is %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Complete sources of these examples (and few more) can be found in
+<a href="https://github.com/kingslef/gcc-extension-test">github</a>.
+Rest of the extensions (and more through documentation of them) can be found
+from <a href="https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html#C-Extensions">GCC docs</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Using Twitter API with C]]></title>
+    <link href="http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c/"/>
+    <updated>2015-02-01T19:01:51+02:00</updated>
+    <id>http://www.aatosjalo.com/blog/2015/02/01/using-twitter-api-with-c</id>
+    <content type="html"><![CDATA[<p>I wanted once to implement simple twitter integration with one C application.
+Even though everything can be found in <a href="https://dev.twitter.com,">https://dev.twitter.com,</a> having no
+experience in the API (or OAuth, or OpenSSL), it can take some time to get used
+to. Here is a small guide of posting a tweet using C and OpenSSL.</p>
+
+<!-- more -->
+
+
+<h2>1. Obtain the consumer tokens</h2>
+
+<p>First you&rsquo;ll need consumer key and secret for your twitter application. This
+will identify your application to twitter.</p>
+
+<p>To receive keys for your application, you need to create it first at
+<a href="https://apps.twitter.com">https://apps.twitter.com</a>. Application will start
+with read-only permissions, which you want to change to read and write to be
+able to post updates. That will require you to give your phone number to
+Twitter.</p>
+
+<p>This will give you keys such as:</p>
+
+<pre><code>consumer key: xvz1evFS4wEEPTGEFPHBog
+consumer secret: kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw
+</code></pre>
+
+<h2>2. Obtain the access tokens</h2>
+
+<p>These tokens gives your application a permission to post updates on behalf of a
+twitter user. Basically the account needs to give permissions for an application
+and let it post on its behalf.</p>
+
+<p>There are a few ways to do this. It needs to be done only once per account and
+application, so I skipped some corners here: I used <a href="http://www.tweepy.org/">Tweepy</a>
+which could generate the tokens quite easily. If you want to do this yourself,
+<a href="https://dev.twitter.com/oauth/pin-based">PIN-based authentication</a> would be the way to go.
+If the account that you are posting with is the also the owner of the application,
+you can also generate the access tokens directly from the application management.</p>
+
+<p>In the end, you should have two keys like this:</p>
+
+<pre><code>access token: k370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb
+access token secret: LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE
+</code></pre>
+
+<h2>3. Percent-encode the status</h2>
+
+<p>Let&rsquo;s say that you want to post <code>Hello from Aatosjalo.com!</code>. First the message
+needs to be
+<a href="http://tools.ietf.org/html/rfc3986#section-2.1">percent-encoded</a>. So all
+reserved characters should be transformed to <code>%&lt;byte0&gt;&lt;byte1&gt;</code>, e.g. ASCII
+character <code></code> (0x20) is percent-encoded to <code>%20</code>. In C, that could be something
+like the following:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* Does character c need percent-encoding or is it an unreserved character? */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">need_percent_encoding</span><span class="p">(</span><span class="kt">char</span> <span class="n">c</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">!</span><span class="p">(</span><span class="n">isalnum</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">c</span><span class="p">)</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;-&#39;</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;.&#39;</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;_&#39;</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;~&#39;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Percent-encode (or URL encode) given string. There should be enough room in</span>
+</span><span class='line'><span class="cm"> * the str (three times uncoded characters). */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">percent_encode</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">need_percent_encoding</span><span class="p">(</span><span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* Make room for two characters. */</span>
+</span><span class='line'>            <span class="n">memmove</span><span class="p">(</span><span class="n">str</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="n">str</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">str</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>            <span class="cm">/* Write &#39;%&#39; and two bytes of which the character consists of. */</span>
+</span><span class='line'>            <span class="kt">char</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+</span><span class='line'>            <span class="n">snprintf</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;%X&quot;</span><span class="p">,</span> <span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">str</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>            <span class="n">snprintf</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;%X&quot;</span><span class="p">,</span> <span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xf</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">str</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>            <span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;%&#39;</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">str</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then you should have your status something like:</p>
+
+<pre><code>status: Hello%20from%20Aatosjalo.com%21
+</code></pre>
+
+<h2>4. Learn Base 64 Encoding</h2>
+
+<p>Twitter expects a certain signature with each status update that needs to be
+<a href="http://tools.ietf.org/html/rfc4648#section-4">Base 64 encoded</a>. I&rsquo;m no expert
+with OpenSSL, but following a few examples I came up with:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">base64_encode</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">msg_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* This could be improved. Currently it allocates bit too much. Times three</span>
+</span><span class='line'><span class="cm">     * is required for the percent encoding but times four is just overestimate</span>
+</span><span class='line'><span class="cm">     * of base64 encoding. */</span>
+</span><span class='line'>    <span class="kt">size_t</span> <span class="n">signature_len</span> <span class="o">=</span> <span class="n">msg_len</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">encoded</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">signature_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">encoded</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* From https://www.openssl.org/docs/crypto/BIO_f_base64.html */</span>
+</span><span class='line'>    <span class="n">BIO</span> <span class="o">*</span><span class="n">b64</span> <span class="o">=</span> <span class="n">BIO_new</span><span class="p">(</span><span class="n">BIO_f_base64</span><span class="p">());</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">b64</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">(</span><span class="n">encoded</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Bio base64 writes to a stream for some reason, so open a stream to the</span>
+</span><span class='line'><span class="cm">     * buffer. */</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">stream</span> <span class="o">=</span> <span class="n">fmemopen</span><span class="p">(</span><span class="n">encoded</span><span class="p">,</span> <span class="n">signature_len</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">stream</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">(</span><span class="n">encoded</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">b64</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">BIO</span> <span class="o">*</span><span class="n">bio</span> <span class="o">=</span> <span class="n">BIO_new_fp</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">BIO_NOCLOSE</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_push</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_set_flags</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="n">BIO_FLAGS_BASE64_NO_NL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_write</span><span class="p">(</span><span class="n">b64</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">msg_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_flush</span><span class="p">(</span><span class="n">b64</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">b64</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">encoded</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>5. Create the signature</h2>
+
+<p>Twitter users OAuth and HTTPS for its APIs. This is already documented quite
+nicely in
+<a href="https://dev.twitter.com/oauth/overview/creating-signatures">Creating Signatures</a>,
+so I won&rsquo;t repeat everything here.</p>
+
+<p>First you&rsquo;ll need a nonce that is used in the signature. It should be relatively
+random and you shouldn&rsquo;t use a nonce twice (even for prototyping). If you are
+using OpenSSL, you could do something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* Generate nonce used as oauth_nonce. */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">generate_nonce</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">nonce</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">RAND_bytes</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">nonce</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">nonce</span><span class="p">)))</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">encoded_nonce</span> <span class="o">=</span> <span class="n">base64_encode</span><span class="p">(</span><span class="n">nonce</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">nonce</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">encoded_nonce</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">size_t</span> <span class="n">nonce_len</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">encoded_nonce</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nonce_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">isalnum</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">encoded_nonce</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* Replace non-alphanumerics by arbitrary &#39;a&#39; since they should not</span>
+</span><span class='line'><span class="cm">             * be present in the nonce. */</span>
+</span><span class='line'>            <span class="n">encoded_nonce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;a&#39;</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">encoded_nonce</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Nonce shouldn&rsquo;t have any non-alphanumeric characters, but maybe you can figure out nicer
+way to get rid of those yourself.</p>
+
+<p>Signature also expects a timestamp, but that can be retrieved quite easily with
+time(2):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="kt">time_t</span> <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'><span class="kt">char</span> <span class="n">timestamp</span><span class="p">[</span><span class="mi">11</span><span class="p">];</span>
+</span><span class='line'><span class="n">snprintf</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">timestamp</span><span class="p">),</span> <span class="s">&quot;%zu&quot;</span><span class="p">,</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">t</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we should have all the parameters for the signature. Next we have to hash
+it with
+<a href="http://en.wikipedia.org/wiki/Hash-based_message_authentication_code">HMAC-SHA1</a>.</p>
+
+<p>One simple implementation of that using OpenSSL would be:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">hmac_sha1_encode</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">hmac_key</span><span class="p">,</span>
+</span><span class='line'>                                       <span class="kt">unsigned</span> <span class="kt">int</span> <span class="o">*</span><span class="n">result_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">result_len</span> <span class="o">=</span> <span class="mi">20</span><span class="p">;</span> <span class="cm">/* Should be always 20 bytes. */</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="o">*</span><span class="n">result_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">HMAC_CTX</span> <span class="n">ctx</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Example from http://stackoverflow.com/a/245335. */</span>
+</span><span class='line'>    <span class="n">HMAC_CTX_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">HMAC_Init_ex</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="n">hmac_key</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">strlen</span><span class="p">(</span><span class="n">hmac_key</span><span class="p">),</span> <span class="n">EVP_sha1</span><span class="p">(),</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">HMAC_Update</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">data</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">data</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">HMAC_Final</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">result_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">HMAC_CTX_cleanup</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we are ready to build the signature:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* Compute the signature from given parameters as required by the OAuth. */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">compute_signature</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">timestamp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">nonce</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">status</span><span class="p">,</span>
+</span><span class='line'>                               <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">consumer_key</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">auth_token</span><span class="p">,</span>
+</span><span class='line'>                               <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">hmac_key</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">signature_base</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">buf_size</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">signature_base</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Encode the status again. */</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">encoded_status</span><span class="p">[</span><span class="n">strlen</span><span class="p">(</span><span class="n">status</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">snprintf</span><span class="p">(</span><span class="n">encoded_status</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">encoded_status</span><span class="p">),</span> <span class="s">&quot;%s&quot;</span><span class="p">,</span> <span class="n">status</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">percent_encode</span><span class="p">(</span><span class="n">encoded_status</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">snprintf</span><span class="p">(</span><span class="n">signature_base</span><span class="p">,</span> <span class="n">buf_size</span><span class="p">,</span> <span class="s">&quot;POST&amp;https%%3A%%2F%%2Fapi.twitter.com&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%2F1.1%%2Fstatuses%%2Fupdate.json&amp;&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;oauth_consumer_key%%3D%s%%26oauth_nonce%%3D%s&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%26oauth_signature_method%%3DHMAC-SHA1&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%26oauth_timestamp%%3D%s%%26oauth_token%%3D%s&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%26oauth_version%%3D1.0&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;%%26status%%3D%s&quot;</span><span class="p">,</span>
+</span><span class='line'>                       <span class="n">consumer_key</span><span class="p">,</span> <span class="n">nonce</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">auth_token</span><span class="p">,</span> <span class="n">encoded_status</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">ret</span> <span class="o">&gt;</span> <span class="n">buf_size</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">(</span><span class="n">signature_base</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">encoded_len</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">hmac_encoded</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">hmac_sha1_encode</span><span class="p">(</span><span class="n">signature_base</span><span class="p">,</span> <span class="n">hmac_key</span><span class="p">,</span>
+</span><span class='line'>                                                  <span class="o">&amp;</span><span class="n">encoded_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">signature_base</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">hmac_encoded</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">encoded</span> <span class="o">=</span> <span class="n">base64_encode</span><span class="p">(</span><span class="n">hmac_encoded</span><span class="p">,</span> <span class="n">encoded_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">hmac_encoded</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">encoded</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">percent_encode</span><span class="p">(</span><span class="n">encoded</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The parameters should be quite self-explanatory expect the HMAC key. HMAC key is
+formed from the consumer secret and access token secret by concatenating them with
+<code>&amp;</code>. For example, HMAC key in our example would be simply:</p>
+
+<pre><code>kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw&amp;LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE
+</code></pre>
+
+<p>You should note that parameter <code>status</code> is already percent-encoded once, but for
+the signature it should be encoded again.</p>
+
+<p>After these, we need to build our <code>signature_base</code>. It should have the HTTP
+request method (here <code>POST</code>), URL that we are going to use
+(<code>https://api.twitter.com/1.1/statuses/update.json</code>) and then the parameters
+(extra <code>%</code> comes from escaping percent in printf). For more information, see
+<a href="https://dev.twitter.com/oauth/overview/creating-signatures">Creating Signatures</a>.</p>
+
+<p>Now we should have everything and we can do the HMAC-SHA1 hashing. The hash
+should finally be base64- and percent-encoded and then we have our signature that
+we will use in our HTTP POST.</p>
+
+<h2>6. Create the POST</h2>
+
+<p>Next we have to create the POST, but we should now have all parameters for that
+so it should be easy.</p>
+
+<p>We are posting a status update and the API documentation for that can be found
+<a href="https://dev.twitter.com/rest/reference/post/statuses/update">here</a>. In short,
+the URL is <code>https://api.twitter.com/1.1/statuses/update.json</code> and the only
+required parameter is <code>status</code>. Example of updating status can be found
+<a href="https://dev.twitter.com/oauth/overview/authorizing-requests">here</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">create_post</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">timestamp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">nonce</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">status</span><span class="p">,</span>
+</span><span class='line'>                         <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">signature</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">consumer_key</span><span class="p">,</span>
+</span><span class='line'>                         <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">auth_token</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">post</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">buf_size</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">post</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">snprintf</span><span class="p">(</span><span class="n">post</span><span class="p">,</span> <span class="n">buf_size</span><span class="p">,</span> <span class="s">&quot;POST /1.1/statuses/update.json HTTP/1.1</span><span class="se">\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;User-Agent: LightBot</span><span class="se">\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;Host: api.twitter.com</span><span class="se">\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;Authorization: OAuth oauth_consumer_key=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, oauth_nonce=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, &quot;</span>
+</span><span class='line'>                       <span class="s">&quot;oauth_signature=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, oauth_signature_method=</span><span class="se">\&quot;</span><span class="s">HMAC-SHA1</span><span class="se">\&quot;</span><span class="s">, &quot;</span>
+</span><span class='line'>                       <span class="s">&quot;oauth_timestamp=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, oauth_token=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s">, oauth_version=</span><span class="se">\&quot;</span><span class="s">1.0</span><span class="se">\&quot;\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;Content-Length: %zu</span><span class="se">\r\n\r\n</span><span class="s">&quot;</span>
+</span><span class='line'>                       <span class="s">&quot;status=%s&quot;</span><span class="p">,</span>
+</span><span class='line'>                       <span class="n">consumer_key</span><span class="p">,</span> <span class="n">nonce</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">auth_token</span><span class="p">,</span>
+</span><span class='line'>                       <span class="n">strlen</span><span class="p">(</span><span class="s">&quot;status=&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span><span class="n">status</span><span class="p">),</span> <span class="n">status</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">ret</span> <span class="o">&gt;=</span> <span class="n">buf_size</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">(</span><span class="n">post</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">post</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The main &lsquo;new&rsquo; thing here is the <code>Authorization</code> parameter which is required by the
+OAuth. Otherwise it&rsquo;s quite straightforward: HTTP method, URL, protocol version,
+user agent (which is just the name of the application) etc.</p>
+
+<h2>7. Sending</h2>
+
+<p>Only thing left is to open a SSL connection to twitter, send the POST and check
+the result. A crude example of doing so:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * Posts given POST to api.twitter.com.</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * From https://thunked.org/programming/openssl-tutorial-client-t11.html and</span>
+</span><span class='line'><span class="cm"> * example in https://www.openssl.org/docs/crypto/BIO_f_ssl.html.</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * This doesn&#39;t verify the server certificate, i.e. it will accept certificates</span>
+</span><span class='line'><span class="cm"> * signed by any CA.</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">send_to_twitter</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">post</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">SSL_CTX</span><span class="o">*</span> <span class="n">ctx</span> <span class="o">=</span> <span class="n">SSL_CTX_new</span><span class="p">(</span><span class="n">SSLv23_client_method</span><span class="p">());</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ctx</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Error creating SSL_CTX</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">BIO</span><span class="o">*</span> <span class="n">bio</span> <span class="o">=</span> <span class="n">BIO_new_ssl_connect</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">bio</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Error creating BIO!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SSL</span><span class="o">*</span> <span class="n">ssl</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">BIO_get_ssl</span><span class="p">(</span><span class="n">bio</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ssl</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ssl</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;BIO_get_ssl failed</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SSL_set_mode</span><span class="p">(</span><span class="n">ssl</span><span class="p">,</span> <span class="n">SSL_MODE_AUTO_RETRY</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">BIO_set_conn_hostname</span><span class="p">(</span><span class="n">bio</span><span class="p">,</span> <span class="s">&quot;api.twitter.com:https&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">BIO_do_connect</span><span class="p">(</span><span class="n">bio</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Failed to connect!&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">BIO_do_handshake</span><span class="p">(</span><span class="n">bio</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Failed to do SSL handshake!&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1024</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">};</span>
+</span><span class='line'>    <span class="n">BIO_puts</span><span class="p">(</span><span class="n">bio</span><span class="p">,</span> <span class="n">post</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">read_bytes</span> <span class="o">=</span> <span class="n">BIO_read</span><span class="p">(</span><span class="n">bio</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">read_bytes</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">buf</span><span class="p">[</span><span class="n">read_bytes</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">strstr</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="s">&quot;HTTP/1.1 200 OK&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">strstr</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="s">&quot;HTTP/1.1 403 Forbidden&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* Twitter doesn&#39;t allow consecutive duplicates and will respond</span>
+</span><span class='line'><span class="cm">             * with 403 in such case. */</span>
+</span><span class='line'>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Twitter responded with 403!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Error occurred! Received:</span><span class="se">\n</span><span class="s">&quot;</span>
+</span><span class='line'>                   <span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Read failed!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">BIO_free_all</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SSL_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Interesting return codes here are 200 and 403. Former will be sent if the update
+was successful, but the latter will be sent if we have reached rate limit or send
+a duplicate update as seen in the description of the API.</p>
+
+<p>Now you should have your tweet posted on your account! As always, the full code
+can be found <a href="https://bitbucket.org/aatos/twitter-update/">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Adding Finnish alphabets to US keyboard layout]]></title>
+    <link href="http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout/"/>
+    <updated>2015-01-25T12:04:47+02:00</updated>
+    <id>http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout</id>
+    <content type="html"><![CDATA[<p>I don&rsquo;t like Finnish keyboard layout that much. Way too many characters require
+three keys to be pressed simultaneously. This is especially annoying when
+programming, since to get, e.g., different types of brackets, you have to change
+between Alt Gr and Shift quite heavily. Furthermore, Finnish layout has keys
+like &lsquo;¤&rsquo;, which I have never used (and just recently learned that is used to
+denote an unspecified currency). Many common characters used in programming are
+dead keys, which makes them difficult to use. I haven&rsquo;t ever used the dead key
+functionality in &lsquo;`&rsquo;, &lsquo;~&rsquo; or &lsquo;^&rsquo; and usually I try to use layout where that is
+disabled. In Linux, there is usually a variant of Finnish layout without dead
+keys, but not in Windows. To tackle these problems, I decided to try US layout.</p>
+
+<!-- more -->
+
+
+<p>I mostly write English, but sometimes I need Finnish and quite many words have
+&lsquo;ä&rsquo; or &lsquo;ö&rsquo;. I don&rsquo;t like switching between different layouts, because I often
+forget to change it back. One nice thing in a Finnish keyboard is that it has 105
+keys, one more than the standard US keyboard. This extra key is located between
+left shift and &lsquo;z&rsquo; and is bound to &lsquo;&lt;&rsquo; by default. In
+<a href="http://arkku.com/dvorak/">ArkkuDvorak</a>, this key is used for &lsquo;ä&rsquo; and &lsquo;ö&rsquo;, so I
+decided to create US layout with that addition. I don&rsquo;t remember when I have
+needed those capitalized and I could manage those rare occasions with <code>M-c</code>.</p>
+
+<p>Modifying keyboard layout in Windows requires <a href="https://msdn.microsoft.com/en-us/goglobal/bb964665.aspx">Microsoft Keyboard Layout Creator</a>
+which is quite straightforward to use. There you can load the US layout and
+change the extra key to whatever you want. You can find the source file for MKLC
+<a href="http://aatosjalo.com/downloads/us-ae.klc">here</a> or even the ready-made installer <a href="http://aatosjalo.com/downloads/us-ae-oe.zip">here</a>.</p>
+
+<p>In Linux this is even easier. With <code>xmodmap</code> you can modify your current X
+keyboard bindings. By doing <code>xmodmap -pke &gt; ~/.Xmodmap</code>, you can dump your
+current layout to a file. Then just by applying the following patch you can get
+&lsquo;ä&rsquo; (adiaeresis) and &lsquo;ö&rsquo; (odiaeresis) to that extra key.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gd">--- .Xmodmap_default_us 2015-01-25 12:47:18.212591435 +0200</span>
+</span><span class='line'><span class="gi">+++ .Xmodmap 2015-01-18 21:34:26.435894329 +0200</span>
+</span><span class='line'><span class="gu">@@ -84,7 +88,7 @@</span>
+</span><span class='line'> keycode  91 = KP_Delete KP_Decimal KP_Delete KP_Decimal
+</span><span class='line'> keycode  92 = ISO_Level3_Shift NoSymbol ISO_Level3_Shift
+</span><span class='line'> keycode  93 =
+</span><span class='line'><span class="gd">-keycode  94 = less greater less greater bar brokenbar bar</span>
+</span><span class='line'><span class="gi">+keycode  94 = adiaeresis odiaeresis less greater bar brokenbar bar</span>
+</span><span class='line'> keycode  95 = F11 F11 F11 F11 F11 F11 XF86Switch_VT_11
+</span><span class='line'> keycode  96 = F12 F12 F12 F12 F12 F12 XF86Switch_VT_12
+</span><span class='line'> keycode  97 =
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Xmodmap can be read by <code>xmodmap ~/.Xmodmap</code> (be careful though, you might want
+to test that it actually works by using some other filename). This is usually
+read automatically when X starts, but you can also add this to
+e.g. <code>.xinitrc</code>. While you are at it, you might want to make your <a href="http://c2.com/cgi/wiki?RemapCapsLock">caps lock act as a control</a>
+by modifying the same file. For doing that on Windows, I have used
+<a href="http://sharpkeys.codeplex.com/">this</a> application.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Sockets in C]]></title>
+    <link href="http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c/"/>
+    <updated>2014-07-14T16:17:33+03:00</updated>
+    <id>http://www.aatosjalo.com/blog/2014/07/14/sockets-in-c</id>
+    <content type="html"><![CDATA[<p>It has been a while since I have done anything with sockets in C, so I figured I
+should refresh my
+memory. <a href="http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html">Beej</a>
+already has a great guide to network programming, so I&rsquo;ll try to make a very
+simple and small introduction. If you want to know more, you should refer to his
+guide.</p>
+
+<!-- more -->
+
+
+<p>To be able to send (or receive) something through sockets, you need perform
+at least two steps:</p>
+
+<ol>
+<li>Create a socket with <a href="http://linux.die.net/man/3/socket">socket(3)</a>.</li>
+<li>Attach an address to it by:
+
+<ul>
+<li>binding (<a href="http://linux.die.net/man/3/bind">bind(3)</a>) a local address to it (if you are
+the server),</li>
+<li>or connecting (<a href="http://linux.die.net/man/3/connect">connect(3)</a>) it to a destination
+address (usually as a client).</li>
+</ul>
+</li>
+</ol>
+
+
+<p>In addition to these, you have to perform other steps if you are the server:</p>
+
+<ol>
+<li>Allow the socket to receive incoming connections by using <a href="http://linux.die.net/man/3/listen">listen(3)</a></li>
+<li>and finally wait for a new client with <a href="http://linux.die.net/man/3/accept">accept(3)</a>.</li>
+</ol>
+
+
+<p>After these are successfully completed, you can use
+<a href="http://linux.die.net/man/3/recv">recv(3)</a> and
+<a href="http://linux.die.net/man/3/send">send(3)</a> to interact with the remote end. The
+steps above are valid for TCP sockets; with UDP you don&rsquo;t have to do all of them
+since it uses connectionless communication. After the communication is done, you
+should close the socket using <a href="http://linux.die.net/man/3/close">close(3)</a>.</p>
+
+<p>Let&rsquo;s start by creating a socket for a client application. The prototype is:</p>
+
+<figure class='code'><figcaption><span>socket function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">socket</span><span class="p">(</span><span class="kt">int</span> <span class="n">domain</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">protocol</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>where <code>domain</code> is basically <code>AF_INET</code> for IPv4 connections and <code>AF_INET6</code> for
+IPv6, <code>type</code> is <code>SOCK_STREAM</code> for TCP connections and <code>SOCK_DGRAM</code> for UDP. By
+leaving <code>protocol</code> to <code>0</code>, we say that we support only one protocol family and
+protocol is then deduced from the <code>domain</code>. Naturally there are more options
+than these and you can read more from the man-pages. The return value is a file
+descriptor to newly created socket (in a successful case). So to create an IPv4
+socket for TCP communication, we could do:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">sock_fd</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">sock_fd</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;socket failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we need to assign an address to the socket by using <code>bind</code> or <code>connect</code>,
+which are pretty similar to each other:</p>
+
+<figure class='code'><figcaption><span>bind and connect function prototypes</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">bind</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span>
+</span><span class='line'>         <span class="kt">socklen_t</span> <span class="n">addrlen</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">connect</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span>
+</span><span class='line'>            <span class="kt">socklen_t</span> <span class="n">addrlen</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here the <code>sockfd</code> is the file descriptor returned by the <code>socket</code>, <code>addr</code> is a
+pointer to an address in the network format and <code>addrlen</code> is its length. In both
+cases return value is zero on success and <code>-1</code> on error.</p>
+
+<p>You would basically have your IP address as a string, e.g. <code>"127.0.0.1"</code> which
+is in printable format. To get a network format from that, you would most likely
+use function like <a href="http://linux.die.net/man/3/inet_pton">inet_pton(3)</a>:</p>
+
+<figure class='code'><figcaption><span>inet_pton function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">inet_pton</span><span class="p">(</span><span class="kt">int</span> <span class="n">af</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">dst</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With <code>inet_pton</code> you transform printable (<strong><em>p</em></strong>ton) address to network address
+format (pto<strong><em>n</em></strong>), for example like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">struct</span> <span class="n">sockaddr_in</span> <span class="n">sock_addr</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">inet_pton</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="s">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_addr</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;inet_pton failed: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then after setting the port (using <code>6000</code> as an example) and the family (IPv4),</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_family</span> <span class="o">=</span> <span class="n">AF_INET</span><span class="p">;</span>
+</span><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_port</span> <span class="o">=</span> <span class="n">htons</span><span class="p">(</span><span class="mi">6000</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>you could connect the previously created <code>sock_fd</code> to the destination address:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">ret</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">sock_addr</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">sock_addr</span><span class="p">));</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;connect failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that the socket is created and connected to the destination address, we
+can send something (with <a href="http://linux.die.net/man/3/send">send(3)</a>):</p>
+
+<figure class='code'><figcaption><span>send function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">ssize_t</span> <span class="nf">send</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">length</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here <code>socket</code> is the <code>sock_fd</code> that we have connected, <code>buffer</code> contains the
+message to be sent and <code>length</code> is its length in bytes. <code>flags</code> argument is not
+interesting for us, so we can leave it as <code>0</code>. <code>send</code> will return the number of
+bytes sent or <code>-1</code> on failure. But basically it will either send all the bytes
+or fail with <code>-1</code>, so you can just check that the return value is not negative.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">const</span> <span class="kt">char</span> <span class="n">buf</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;test string&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">ssize_t</span> <span class="n">sent_bytes</span> <span class="o">=</span> <span class="n">send</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">sent_bytes</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;send failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To create the server application, we will create the socket same way as before
+but now we will use <code>bind</code> instead of <code>connect</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">sock_fd</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">sock_fd</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;socket failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">struct</span> <span class="n">sockaddr_in</span> <span class="n">sock_addr</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_family</span> <span class="o">=</span> <span class="n">AF_INET</span><span class="p">;</span>
+</span><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_addr</span><span class="p">.</span><span class="n">s_addr</span> <span class="o">=</span> <span class="n">INADDR_ANY</span><span class="p">;</span>
+</span><span class='line'><span class="n">sock_addr</span><span class="p">.</span><span class="n">sin_port</span> <span class="o">=</span> <span class="n">htons</span><span class="p">(</span><span class="mi">6000</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">bind</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">sock_addr</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">sock_addr</span><span class="p">));</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;bind failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We use constant <code>INADDR_ANY</code> as an address to say that we want to bind to all
+interfaces on the machine (i.e. not restricting us only to &ldquo;127.0.0.1&rdquo; but to
+allow packets to arrive in any address assigned to us). Next we have to inform
+the operating system that we are interested in incoming connections by using
+<code>listen</code>:</p>
+
+<figure class='code'><figcaption><span>listen function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">listen</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="kt">int</span> <span class="n">backlog</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here <code>socket</code> is the socket file descriptor that we have bound and <code>backlog</code> is
+basically means how many clients there can be queued for this socket. We are
+expecting only one client now so let&rsquo;s just use <code>1</code> as a <code>backlog</code>. <code>listen</code>
+returns <code>0</code> on success and <code>-1</code> on failure, so remember to check the return
+value also here.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">ret</span> <span class="o">=</span> <span class="n">listen</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">perror</span><span class="p">(</span><span class="s">&quot;listen failed&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The actual waiting for a new client happens in <code>accept</code>:</p>
+
+<figure class='code'><figcaption><span>accept function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">accept</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="kr">restrict</span> <span class="n">address</span><span class="p">,</span>
+</span><span class='line'>           <span class="kt">socklen_t</span> <span class="o">*</span><span class="kr">restrict</span> <span class="n">address_len</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here <code>socket</code> is the file descriptor that has been bound and listened, <code>address</code>
+is a structure where the address of connected client is stored and <code>address_len</code>
+is its length. Last two arguments are optional, so if you are not interested in
+client&rsquo;s address, you may just give <code>NULL</code> to both. Return value is a socket
+file descriptor or <code>-1</code> on failure. Notice though that <code>accept</code> will block until
+a client arrives, meaning that this function call will not return until someone
+connects to our server.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>    <span class="kt">int</span> <span class="n">client_sock</span> <span class="o">=</span> <span class="n">accept</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">client_sock</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">perror</span><span class="p">(</span><span class="s">&quot;accept failed&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we can use <code>client_sock</code> for sending and receiving. Since our client program
+sends a message to the server, we might as well use <code>recv</code> here and print the
+received bytes:</p>
+
+<figure class='code'><figcaption><span>recv function prototype</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">ssize_t</span> <span class="nf">recv</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">length</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>recv</code> function prototype is basically the same as with <code>send</code>. <code>flags</code> can be
+omitted also here for now. Only difference is the return value; <code>recv</code> will
+return the length of the message received, <code>-1</code> on failure or <code>0</code> if client has
+properly closed the socket. So if zero is returned, client didn&rsquo;t send anything.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>    <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">ssize_t</span> <span class="n">received_bytes</span> <span class="o">=</span> <span class="n">recv</span><span class="p">(</span><span class="n">client_sock</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">received_bytes</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">perror</span><span class="p">(</span><span class="s">&quot;recv failed&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">close</span><span class="p">(</span><span class="n">client_sock</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">received_bytes</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;client closed the connection</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="cm">/* Someting was received, print it. */</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;received: &#39;&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">ssize_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">received_bytes</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">putchar</span><span class="p">(</span><span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">client_sock</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">close</span><span class="p">(</span><span class="n">sock_fd</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And that&rsquo;s all there is to get a simple client/server application in C. Remember
+to check the return values and print errors with
+<a href="http://linux.die.net/man/3/perror">perror(3)</a> if you run in to any problems. As
+always, you can download the complete files for the
+<a href="http://aatosjalo.com/downloads/code/client.c">client</a> and the
+<a href="http://aatosjalo.com/downloads/code/server.c">server</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Understanding Boyer-Moore]]></title>
+    <link href="http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/"/>
+    <updated>2014-06-30T20:21:25+03:00</updated>
+    <id>http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore</id>
+    <content type="html"><![CDATA[<p>Boyer-Moore string searching algorithm is very elementary string searching
+algorithm that is probably gone through as a first or second algorithm in every
+string algorithm course. Even though it is a basic algorithm, it doesn&rsquo;t mean
+that it wouldn&rsquo;t be used in any real-world application. For example, Boyer-Moore
+is used in GNU Grep for fixed string matching <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> and also in <a href="https://github.com/ggreer/the_silver_searcher">Silver Surfer</a> (well, both use a
+different BM variant but still BM).</p>
+
+<!-- more -->
+
+
+<p>BM starts comparing characters one by one starting from the last character in
+the pattern. By comparing each character we don&rsquo;t get much better performance
+than a trivial algorithm, so BM tries to minimize the character comparisons and
+not to do any pointless comparisons. Character comparisons can be minimized by
+shifting the pattern to the right when a mismatch occurs. By starting the
+comparison from the last character, algorithm can learn more about matched and
+mismatched characters.</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern: ABBABAB
+               ↑
+</code></pre>
+
+<p>So here the text is <code>ABBABAZ AABBABAB ABACBCBBABAB</code> and the pattern that we are
+searching from the text is <code>ABBABAB</code>. The character that the algorithm is
+currently comparing is pointed by the <code>↑</code>. Character <code>Z</code> doesn&rsquo;t occur in the
+pattern, and if the last character doesn&rsquo;t match, there is no point in comparing
+any of the preceding characters, so pattern can shifted fully past the <code>Z</code>
+character.</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:        ABBABAB
+                      ↑
+</code></pre>
+
+<p>The amount BM shifts the pattern forward is calculated by two rules: bad
+character rule and good suffix rule. We saw the bad character rule already in
+the previous example. It tells how much the pattern can be shifted given a
+character that caused the mismatch. Bad character rule produces a table
+consisting of all possible characters that can occur in the text. Each element
+tells how much pattern can be shifted when this character caused the
+mismatch. Characters that are not in the pattern, e.g. <code>Z</code> in this case, have
+the length of the pattern as the value. Characters that occur in the pattern
+have the value of distance from the end of the pattern to the rightmost
+occurrence. If the distance is <code>0</code>, algorithm would still shift it by <code>1</code> since
+otherwise we would stay at the same place indefinitely. For example, <code>A</code> would
+have a value of <code>1</code> since it is the second character from the end. The full
+table for this pattern would be:</p>
+
+<pre><code>Character:    A B Other
+Value:        1 0 7
+</code></pre>
+
+<p>Good suffix rule is a bit more complex. It focuses on the already matched
+characters (i.e. the suffix that was successfully matched). It consists of two
+cases. First, it tries to align matched suffix to another occurrence of it in the
+pattern (preceded by a different character) and if this is not possible, it
+tries to align a suffix of the matched part and a prefix of the pattern. Coming
+back to the previous example.</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:        ABBABAB
+                   ↑
+</code></pre>
+
+<p>At this point, <code>BAB</code> is the suffix that is successfully matched since a mismatch
+happens when comparing <code>B</code> to <code>A</code>. Bad character shift would be now <code>1</code> (table
+says <code>0</code> but we&rsquo;ll really shift by <code>1</code>), but with good suffix rule we could
+shift more. If there is another occurrence of the matched suffix somewhere else
+in the pattern, that occurrence is aligned to the same substring in the text. But
+since we don&rsquo;t want to do a pointless shift and end up in the same situation
+(i.e. successfully match <code>BAB</code> but then fail when comparing <code>B</code> to <code>A</code>), we need
+to check that this occurrence is not preceded by the same character that the
+matched suffix was. In our case, <code>BAB</code> is preceded by <code>A</code>, so now we want to
+find <code>BAB</code> somewhere else in the pattern which preceded by something else. <code>BAB</code>
+occurs only in &lsquo;ABBA<strong><em>BAB</em></strong>&rsquo; and &lsquo;AB<strong><em>BAB</em></strong>AB&rsquo; which are both preceded by
+different characters. So the pattern is aligned as follows:</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:          ABBABAB
+                        ↑
+</code></pre>
+
+<p>Now the pattern is matched and we end up in a situation like this:</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:          ABBABAB
+                 ↑
+</code></pre>
+
+<p>Again, bad character shift would be <code>1</code>. Now the good suffix is <code>ABBABAB</code>,
+i.e. the whole pattern but it cannot occur anywhere else in the pattern. But
+according to the second case in good suffix rule, we will try to align a suffix
+of the matched part and a prefix of the pattern. <code>AB</code> is both prefix and suffix
+of <code>ABBABAB</code> so we will align &lsquo;<strong><em>AB</em></strong>BABAB&rsquo; and &lsquo;ABBAB<strong><em>AB</em></strong>&rsquo;.</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:               ABBABAB
+                             ↑
+</code></pre>
+
+<p>So, we have two rules in BM and neither of them will miss any of the
+occurrences. Sometimes bad character rule can shift more than good suffix rule
+and sometimes vice versa. Hence, it is more efficient to calculate the shift
+from both rules and use the maximum. It would be possible to only implement the
+other and still be able to match all possible occurrences.</p>
+
+<p>Implementation of the main BM algorithm is quite straightforward. As said
+before, BM compares characters one by one starting from the end of the pattern
+and shifts it according to the two rules when mismatch occurs.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">uint32_t</span> <span class="nf">boyer_moore</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">text</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">matches</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">pattern</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">size_t</span> <span class="n">text_len</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">text</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">bad_char</span><span class="p">[</span><span class="n">ALPHABET_SIZE</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">good_suffix</span><span class="p">[</span><span class="n">pattern_len</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">build_bad_char_array</span><span class="p">(</span><span class="n">bad_char</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">pattern_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">build_good_suffix_array</span><span class="p">(</span><span class="n">good_suffix</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">pattern_len</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">text_len</span><span class="p">;)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">uint32_t</span> <span class="n">j</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">while</span> <span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">pattern</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">printf</span><span class="p">(</span><span class="s">&quot;match %u at %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">matches</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>                <span class="n">matches</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>                <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>            <span class="n">i</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">j</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">matched_chars</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">j</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">delta1</span> <span class="o">=</span> <span class="n">bad_char</span><span class="p">[</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">&lt;=</span> <span class="n">matched_chars</span> <span class="o">?</span>
+</span><span class='line'>            <span class="mi">1</span> <span class="o">:</span> <span class="n">bad_char</span><span class="p">[</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">-</span> <span class="n">matched_chars</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">delta2</span> <span class="o">=</span> <span class="n">good_suffix</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">shift</span> <span class="o">=</span> <span class="n">MAX</span><span class="p">(</span><span class="n">delta1</span><span class="p">,</span> <span class="n">delta2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">i</span> <span class="o">+=</span> <span class="n">matched_chars</span> <span class="o">+</span> <span class="n">shift</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">matches</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This function runs BM algorithm on a given text and pattern, prints positions
+where matches occur and returns the number of the matches. The first few lines
+initialize the structures and calculate lengths of the pattern and the text
+(which could be omitted). Then at the for loop, we start looping through the
+characters, starting from the end of the pattern and continuing until we have
+gone through the whole text. The while loop compares the characters in the text and
+in the pattern until a mismatch occurs (or until we have successfully matched
+each character so we have a match). After that the position where we read from
+the text is shifted according to the two rules.</p>
+
+<p>One thing to note though is that when calculating shift from bad character
+rule, we must take number of matched characters into account. For example, if
+the situation is:</p>
+
+<pre><code>text:    ABBAZABBABAB
+pattern: ABBABAB
+             ↑
+</code></pre>
+
+<p>Value in the bad character shift table would be 7, which would be invalid since
+valid match would not be seen. Hence we have to subtract matched characters
+from 7, i.e. actual shift would be 5 and next place for the pattern is:</p>
+
+<pre><code>text:    ABBAZABBABAB
+pattern:      ABBABAB
+                    ↑
+</code></pre>
+
+<p>In addition, when calculating the shift from bad character rule (<code>delta1</code>), we
+have to make sure that if <code>bad_char[text[i]]</code> is zero, we shift it with 1.</p>
+
+<p>As you can see, the main logic is very simple and it can be done in a few lines
+of code. Some error checks here are omitted for simplicity, for example,
+checking that pattern and text are nonempty and non-null and that the pattern is
+not shorter than the text, but they would be very trivial to add.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">build_bad_char_array</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">bad_char_array</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">,</span>
+</span><span class='line'>                          <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">ALPHABET_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">bad_char_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pattern_len</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pattern_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">bad_char_array</span><span class="p">[</span><span class="n">pattern</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s move on to the bad character rule. The first for loop initializes the
+whole bad character array with the length of the pattern. This way we can
+address the characters that are not in the pattern. To recap, if the character
+in the text doesn&rsquo;t occur anywhere in the pattern, we can move the whole pattern
+past that. <code>ALPHABET_SIZE</code> should cover all possible characters in text. Here we
+are using <code>CHAR_MAX</code> which should be enough when dealing with ASCII text.</p>
+
+<p>The second for loop in bad character rule sets the characters that are actually
+in the pattern. In a case of a mismatch, when the character is in the pattern,
+we must shift the pattern so that the character in the text and the
+corresponding character in the pattern are aligned. If there are many occurrences
+of that character in the pattern, we should align with the rightmost.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">build_good_suffix_array</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">,</span>
+</span><span class='line'>                             <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* If the mismatch happens at the first character, we can only move by</span>
+</span><span class='line'><span class="cm">     * one. */</span>
+</span><span class='line'>    <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">pattern_len</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="cm">/* Case 1 doesn&#39;t apply on the first element, so initialize it to zero. */</span>
+</span><span class='line'>    <span class="n">good_suffix_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">build_good_suffix_case1</span><span class="p">(</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">pattern_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">build_good_suffix_case2</span><span class="p">(</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">pattern_len</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Only thing left now is the good suffix rule which is also arguably the most
+difficult part. Easiest (but not the most efficient) way to tackle this is to
+simply turn the both cases to code. At first, we have few corner cases: if a
+mismatch happens on the first character, we can only shift by one since we don&rsquo;t
+really know anything about the text yet. Secondly, since <code>good_suffix_rule</code> is
+not initialized, we should set zeroth element to zero since case 1 cannot apply
+to it. Then we build case 1 and case 2 of the good suffix rule.</p>
+
+<p>First case in good suffix rule is to find the matched part somewhere else in the
+pattern, but it cannot have the same preceding character as the matched
+part. Easiest way to do this is to search all possible suffixes from the
+pattern.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">build_good_suffix_case1</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">,</span>
+</span><span class='line'>                                    <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* Case 1: matched string occurs in the pattern. */</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pattern_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">uint32_t</span> <span class="n">matched_start_idx</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="n">find_occurrence</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">matched_start_idx</span><span class="p">,</span>
+</span><span class='line'>                                <span class="n">pattern</span> <span class="o">+</span> <span class="n">matched_start_idx</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span>
+</span><span class='line'>                                <span class="n">pattern</span><span class="p">[</span><span class="n">matched_start_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">m</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">matched_start_idx</span> <span class="o">-</span> <span class="n">m</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So, start searching the occurrences of the suffixes. For example, if the pattern
+is <code>abbabab</code>, we&rsquo;ll search occurrences of <code>b</code>, then <code>ab</code>, <code>bab</code>, <code>abab</code> and so
+on. For <code>b</code>, you&rsquo;ll find occurrences in &lsquo;a<strong><em>b</em></strong><strong><em>b</em></strong>a<strong><em>b</em></strong>a<strong><em>b</em></strong>&rsquo;, but it
+may not be preceded by <code>a</code> (because <code>a</code> is now the character that caused the
+mismatch and shifting with that would bring us to the same situation) and the
+rightmost <code>b</code> doesn&rsquo;t count (because shift would be 0 which would be
+nonsense). Hence, the correct occurrence is &lsquo;ab<strong><em>b</em></strong>abab&rsquo;. When building case 1
+for good suffix rule, we feed all these suffixes to <code>find_occurrence</code> function.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">find_occurrence</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">haystack</span><span class="p">,</span> <span class="k">const</span> <span class="kt">size_t</span> <span class="n">comparison_start</span><span class="p">,</span>
+</span><span class='line'>                           <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">needle</span><span class="p">,</span> <span class="k">const</span> <span class="kt">size_t</span> <span class="n">needle_len</span><span class="p">,</span>
+</span><span class='line'>                           <span class="k">const</span> <span class="kt">char</span> <span class="n">preceding</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">comparison_start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">match</span> <span class="o">=</span> <span class="n">strncmp</span><span class="p">(</span><span class="n">haystack</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">needle</span><span class="p">,</span> <span class="n">needle_len</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">match</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">haystack</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">preceding</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we try to find the given suffix somewhere from the pattern. It basically
+tries to be reverse <code>strstr</code>, because we are interested in the rightmost
+match. In addition, the match may not be preceded by the mismatched character
+(parameter <code>preceding</code>). For example, when calculating good suffix rule for
+<code>bab</code>, where <code>b</code> is the mismatched character so the good suffix is <code>ab</code>, this
+function makes following comparisons:</p>
+
+<pre><code>text:    abbabab
+pattern:     ab    # 'ba' != 'ab'
+            ab     # 'ab' == 'ab', but preceded by 'b'
+           ab      # 'ba' != 'ab'
+          ab       # 'bb' != 'ab'
+         ab        # 'ab' == 'ab', and not preceded by 'b' -&gt; return 0
+</code></pre>
+
+<p>Last part of the good suffix rule should check if a suffix of the matched
+substring is a prefix of the pattern. In other words, check if some rightmost
+part of the matched substring is included at the beginning of the pattern. This
+case doesn&rsquo;t apply if previous case applied, so if <code>good_suffix_rule[i]</code> is
+nonzero, we don&rsquo;t have to calculate anything there. One simple way to implement
+this, it is to take each suffix and check if ending of it occurs at the
+beginning of the pattern.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">build_good_suffix_case2</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">,</span>
+</span><span class='line'>                                    <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* Case 2: suffix of a matched string is a prefix of the pattern. */</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pattern_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">good_suffix_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* If case 2 is applies only if case 1 didn&#39;t. */</span>
+</span><span class='line'>            <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="n">is_prefix</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">pattern</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">m</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pattern_len</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In <code>build_good_suffix_case2</code> function, we take each suffix and give it to
+<code>is_prefix</code> function. This time the order of the suffixes doesn&rsquo;t matter so
+we&rsquo;ll start looping from the left.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">is_prefix</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">prefix</span><span class="p">,</span>
+</span><span class='line'>                     <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">prefix_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Prefix must be a proper prefix, so if str and prefix are the same then</span>
+</span><span class='line'><span class="cm">     * start comparing from the first character. */</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">str</span> <span class="o">==</span> <span class="n">prefix</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">prefix_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">match</span> <span class="o">=</span> <span class="n">strncmp</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">prefix_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">match</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we start checking if <code>str</code> and <code>prefix</code> are the same memory address,
+because we are interested only in proper prefixes (proper prefix is not the
+string itself). Since we know how this function is used, we may use memory
+address comparison here. Then we start decreasing <code>prefix</code> from the right until
+it matches or until all suffixes are checked. For example, when <code>str</code> is the
+same <code>ABBABAB</code>, and <code>prefix</code> is <code>BBABAB</code>, following comparisons are made:</p>
+
+<pre><code>str:     abbabab
+prefix:  bbabab
+         babab
+         abab
+         bab
+         ab        # match -&gt; return '4'
+</code></pre>
+
+<p>This implementation of the good suffix rule is quite inefficient since we
+discard a lot of information, e.g. we would only need to calculate possible
+suffixes once and we could learn those already when calculating the first
+case. But since we are trying to understand how BM works, I think this approach
+is justified since it is easier to understand.</p>
+
+<p>You can find the whole implementation
+<a href="http://aatosjalo.com/downloads/code/bm.c">here</a> with few unit tests. It should
+print something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>gcc -std<span class="o">=</span>c99 -Wall -Wextra -pedantic -Wno-char-subscripts bm.c <span class="o">&amp;&amp;</span> ./a.exe
+</span><span class='line'>searching <span class="s1">&#39;bar&#39;</span> from <span class="s1">&#39;foo&#39;</span>
+</span><span class='line'>searching <span class="s1">&#39;foo&#39;</span> from <span class="s1">&#39;fo&#39;</span>
+</span><span class='line'>searching <span class="s1">&#39;fooooo&#39;</span> from <span class="s1">&#39;foooob&#39;</span>
+</span><span class='line'>searching <span class="s1">&#39;foo&#39;</span> from <span class="s1">&#39;foo&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 0
+</span><span class='line'>searching <span class="s1">&#39;foo&#39;</span> from <span class="s1">&#39;barfoo&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 3
+</span><span class='line'>searching <span class="s1">&#39;foobar&#39;</span> from <span class="s1">&#39;barfoo rfoobarr foobar&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 8
+</span><span class='line'>match <span class="m">1</span> at 16
+</span><span class='line'>searching <span class="s1">&#39;foobar&#39;</span> from <span class="s1">&#39;foobafoobafoobafoobafrboofarfoobar&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 28
+</span><span class='line'>searching <span class="s1">&#39;WOOHOO&#39;</span> from <span class="s1">&#39;HOOWOOWOOHOOWOOWOO&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 6
+</span><span class='line'>searching <span class="s1">&#39;LALLILLA&#39;</span> from <span class="s1">&#39;SALLILAILLATAVANLALLILLALLALALLI&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 16
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>http://git.savannah.gnu.org/cgit/grep.git/tree/README<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hello]]></title>
+    <link href="http://www.aatosjalo.com/blog/2014/06/12/hello/"/>
+    <updated>2014-06-12T23:32:04+03:00</updated>
+    <id>http://www.aatosjalo.com/blog/2014/06/12/hello</id>
+    <content type="html"><![CDATA[<p>This is the first post. I&rsquo;ll be writing about programming and somehow
+related areas that I&rsquo;m interested in and want to learn more. Basically
+I&rsquo;ll document what I have done and learned, mostly for myself, but if
+someone manages to get here by googling, it&rsquo;s even better. At least
+for the summer I should have some time to spend on this, but after
+that the amount of posts will decrease.</p>
+
+<!-- more -->
+
+
+<p>For the first real post I will write about Boyer-Moore string
+searching algorithm. When I implemented it, I couldn&rsquo;t find any decent
+explanation about the implementation of the good suffix rule. The
+basics behind BM are quite easy to understand but the implementation
+itself is not so straightforward. By writing about it, I&rsquo;ll see if I
+really understood it.</p>
+
+<p>Next, I would like to experiment a little with <a href="http://www.linuxfromscratch.org/">Linux from scratch</a>. I have used many different
+Linux distributions, but I don&rsquo;t have a clue what is required for a
+working system after you have the kernel image. I have been using
+Emacs for awhile, and it would be nice to try to setup Linux with as
+few libraries and applications as possible and just use Emacs for
+everything (as a terminal, shell etc.). I think it wouldn&rsquo;t be very
+usable for the long run since it would miss a lot of modern features
+but something like writing and uploading blog post on it should be
+possible.</p>
+
+<p>I chose <a href="http://octopress.org/">Octopress</a> for my blogging needs since
+it seems to be quite lightweight and just what I need (and of course,
+who doesn&rsquo;t like Markdown?). It doesn&rsquo;t require anything on the server
+side (except SSH access for easier deployment) and writing new posts
+seems to be easy. I don&rsquo;t really know anything about blogging
+platforms at this point and at first I thought that I have to use
+Wordpress or Joomla which might have been little too heavyweight. As a
+web hosting provider I chose <a href="https://www.webhotelli.fi/">Webhotelli.fi</a>
+because it was quite cheap and offered SSH with their smallest plan
+where providers only include SSH with more expensive plans (i.e. buy
+more disk space to get SSH).</p>
+]]></content>
+  </entry>
+  
+</feed>

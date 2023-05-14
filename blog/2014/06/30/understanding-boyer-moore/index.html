@@ -1,0 +1,747 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<script data-cfasync="false" type="text/javascript" src="//use.typekit.net/axj3cfp.js"></script>
+	<script data-cfasync="false" type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	<meta charset="utf-8">
+	<title>Understanding Boyer-Moore  | Aatos Jalo</title>
+
+<meta name="author" content="Aatos Jalo"> 
+
+<meta name="description" content="Boyer-Moore string searching algorithm is very elementary string searching
+algorithm that is probably gone through as a first or second algorithm in &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Aatos Jalo" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery.fancybox.pack.js"></script>
+
+<script language="Javascript" type="text/javascript">
+$(document).ready(
+  function() {
+    (function($) {
+      $(".fancybox[data-content-id]").each(function() {
+        this.href = $(this).data('content-id');
+      });
+      $(".fancybox").fancybox({
+        beforeLoad: function() {
+          var el, 
+              id = $(this.element).data('title-id');
+
+          if (id) {
+            el = $('#' + id);
+
+            if (el.length) {
+              this.title = el.html();
+            }
+          }
+          if ($(this).data('content')) {
+            this.content = $(this).data('content');
+          }
+        },
+        helpers: {
+          title: {
+            type: 'inside'
+          }
+        }
+      });
+    })(jQuery);
+  }
+);
+</script>
+
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Aatos Jalo</a></h1>
+<h4></h4>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:www.aatosjalo.com">
+			</form>
+		</div>
+	</div>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Understanding Boyer-Moore</h2>
+	<div class="entry-content"><p>Boyer-Moore string searching algorithm is very elementary string searching
+algorithm that is probably gone through as a first or second algorithm in every
+string algorithm course. Even though it is a basic algorithm, it doesn&rsquo;t mean
+that it wouldn&rsquo;t be used in any real-world application. For example, Boyer-Moore
+is used in GNU Grep for fixed string matching <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> and also in <a href="https://github.com/ggreer/the_silver_searcher">Silver Surfer</a> (well, both use a
+different BM variant but still BM).</p>
+
+<!-- more -->
+
+
+<p>BM starts comparing characters one by one starting from the last character in
+the pattern. By comparing each character we don&rsquo;t get much better performance
+than a trivial algorithm, so BM tries to minimize the character comparisons and
+not to do any pointless comparisons. Character comparisons can be minimized by
+shifting the pattern to the right when a mismatch occurs. By starting the
+comparison from the last character, algorithm can learn more about matched and
+mismatched characters.</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern: ABBABAB
+               ↑
+</code></pre>
+
+<p>So here the text is <code>ABBABAZ AABBABAB ABACBCBBABAB</code> and the pattern that we are
+searching from the text is <code>ABBABAB</code>. The character that the algorithm is
+currently comparing is pointed by the <code>↑</code>. Character <code>Z</code> doesn&rsquo;t occur in the
+pattern, and if the last character doesn&rsquo;t match, there is no point in comparing
+any of the preceding characters, so pattern can shifted fully past the <code>Z</code>
+character.</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:        ABBABAB
+                      ↑
+</code></pre>
+
+<p>The amount BM shifts the pattern forward is calculated by two rules: bad
+character rule and good suffix rule. We saw the bad character rule already in
+the previous example. It tells how much the pattern can be shifted given a
+character that caused the mismatch. Bad character rule produces a table
+consisting of all possible characters that can occur in the text. Each element
+tells how much pattern can be shifted when this character caused the
+mismatch. Characters that are not in the pattern, e.g. <code>Z</code> in this case, have
+the length of the pattern as the value. Characters that occur in the pattern
+have the value of distance from the end of the pattern to the rightmost
+occurrence. If the distance is <code>0</code>, algorithm would still shift it by <code>1</code> since
+otherwise we would stay at the same place indefinitely. For example, <code>A</code> would
+have a value of <code>1</code> since it is the second character from the end. The full
+table for this pattern would be:</p>
+
+<pre><code>Character:    A B Other
+Value:        1 0 7
+</code></pre>
+
+<p>Good suffix rule is a bit more complex. It focuses on the already matched
+characters (i.e. the suffix that was successfully matched). It consists of two
+cases. First, it tries to align matched suffix to another occurrence of it in the
+pattern (preceded by a different character) and if this is not possible, it
+tries to align a suffix of the matched part and a prefix of the pattern. Coming
+back to the previous example.</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:        ABBABAB
+                   ↑
+</code></pre>
+
+<p>At this point, <code>BAB</code> is the suffix that is successfully matched since a mismatch
+happens when comparing <code>B</code> to <code>A</code>. Bad character shift would be now <code>1</code> (table
+says <code>0</code> but we&rsquo;ll really shift by <code>1</code>), but with good suffix rule we could
+shift more. If there is another occurrence of the matched suffix somewhere else
+in the pattern, that occurrence is aligned to the same substring in the text. But
+since we don&rsquo;t want to do a pointless shift and end up in the same situation
+(i.e. successfully match <code>BAB</code> but then fail when comparing <code>B</code> to <code>A</code>), we need
+to check that this occurrence is not preceded by the same character that the
+matched suffix was. In our case, <code>BAB</code> is preceded by <code>A</code>, so now we want to
+find <code>BAB</code> somewhere else in the pattern which preceded by something else. <code>BAB</code>
+occurs only in &lsquo;ABBA<strong><em>BAB</em></strong>&rsquo; and &lsquo;AB<strong><em>BAB</em></strong>AB&rsquo; which are both preceded by
+different characters. So the pattern is aligned as follows:</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:          ABBABAB
+                        ↑
+</code></pre>
+
+<p>Now the pattern is matched and we end up in a situation like this:</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:          ABBABAB
+                 ↑
+</code></pre>
+
+<p>Again, bad character shift would be <code>1</code>. Now the good suffix is <code>ABBABAB</code>,
+i.e. the whole pattern but it cannot occur anywhere else in the pattern. But
+according to the second case in good suffix rule, we will try to align a suffix
+of the matched part and a prefix of the pattern. <code>AB</code> is both prefix and suffix
+of <code>ABBABAB</code> so we will align &lsquo;<strong><em>AB</em></strong>BABAB&rsquo; and &lsquo;ABBAB<strong><em>AB</em></strong>&rsquo;.</p>
+
+<pre><code>text:    ABBABAZ AABBABAB ABACBCBBABAB
+pattern:               ABBABAB
+                             ↑
+</code></pre>
+
+<p>So, we have two rules in BM and neither of them will miss any of the
+occurrences. Sometimes bad character rule can shift more than good suffix rule
+and sometimes vice versa. Hence, it is more efficient to calculate the shift
+from both rules and use the maximum. It would be possible to only implement the
+other and still be able to match all possible occurrences.</p>
+
+<p>Implementation of the main BM algorithm is quite straightforward. As said
+before, BM compares characters one by one starting from the end of the pattern
+and shifts it according to the two rules when mismatch occurs.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">uint32_t</span> <span class="nf">boyer_moore</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">text</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">matches</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">pattern</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">size_t</span> <span class="n">text_len</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">text</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">bad_char</span><span class="p">[</span><span class="n">ALPHABET_SIZE</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">good_suffix</span><span class="p">[</span><span class="n">pattern_len</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">build_bad_char_array</span><span class="p">(</span><span class="n">bad_char</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">pattern_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">build_good_suffix_array</span><span class="p">(</span><span class="n">good_suffix</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">pattern_len</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">text_len</span><span class="p">;)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">uint32_t</span> <span class="n">j</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">while</span> <span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">pattern</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">printf</span><span class="p">(</span><span class="s">&quot;match %u at %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">matches</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>                <span class="n">matches</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>                <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>            <span class="n">i</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">j</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">matched_chars</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">j</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">delta1</span> <span class="o">=</span> <span class="n">bad_char</span><span class="p">[</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">&lt;=</span> <span class="n">matched_chars</span> <span class="o">?</span>
+</span><span class='line'>            <span class="mi">1</span> <span class="o">:</span> <span class="n">bad_char</span><span class="p">[</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">-</span> <span class="n">matched_chars</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">delta2</span> <span class="o">=</span> <span class="n">good_suffix</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">shift</span> <span class="o">=</span> <span class="n">MAX</span><span class="p">(</span><span class="n">delta1</span><span class="p">,</span> <span class="n">delta2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">i</span> <span class="o">+=</span> <span class="n">matched_chars</span> <span class="o">+</span> <span class="n">shift</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">matches</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This function runs BM algorithm on a given text and pattern, prints positions
+where matches occur and returns the number of the matches. The first few lines
+initialize the structures and calculate lengths of the pattern and the text
+(which could be omitted). Then at the for loop, we start looping through the
+characters, starting from the end of the pattern and continuing until we have
+gone through the whole text. The while loop compares the characters in the text and
+in the pattern until a mismatch occurs (or until we have successfully matched
+each character so we have a match). After that the position where we read from
+the text is shifted according to the two rules.</p>
+
+<p>One thing to note though is that when calculating shift from bad character
+rule, we must take number of matched characters into account. For example, if
+the situation is:</p>
+
+<pre><code>text:    ABBAZABBABAB
+pattern: ABBABAB
+             ↑
+</code></pre>
+
+<p>Value in the bad character shift table would be 7, which would be invalid since
+valid match would not be seen. Hence we have to subtract matched characters
+from 7, i.e. actual shift would be 5 and next place for the pattern is:</p>
+
+<pre><code>text:    ABBAZABBABAB
+pattern:      ABBABAB
+                    ↑
+</code></pre>
+
+<p>In addition, when calculating the shift from bad character rule (<code>delta1</code>), we
+have to make sure that if <code>bad_char[text[i]]</code> is zero, we shift it with 1.</p>
+
+<p>As you can see, the main logic is very simple and it can be done in a few lines
+of code. Some error checks here are omitted for simplicity, for example,
+checking that pattern and text are nonempty and non-null and that the pattern is
+not shorter than the text, but they would be very trivial to add.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">build_bad_char_array</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">bad_char_array</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">,</span>
+</span><span class='line'>                          <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">ALPHABET_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">bad_char_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pattern_len</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pattern_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">bad_char_array</span><span class="p">[</span><span class="n">pattern</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s move on to the bad character rule. The first for loop initializes the
+whole bad character array with the length of the pattern. This way we can
+address the characters that are not in the pattern. To recap, if the character
+in the text doesn&rsquo;t occur anywhere in the pattern, we can move the whole pattern
+past that. <code>ALPHABET_SIZE</code> should cover all possible characters in text. Here we
+are using <code>CHAR_MAX</code> which should be enough when dealing with ASCII text.</p>
+
+<p>The second for loop in bad character rule sets the characters that are actually
+in the pattern. In a case of a mismatch, when the character is in the pattern,
+we must shift the pattern so that the character in the text and the
+corresponding character in the pattern are aligned. If there are many occurrences
+of that character in the pattern, we should align with the rightmost.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">build_good_suffix_array</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">,</span>
+</span><span class='line'>                             <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* If the mismatch happens at the first character, we can only move by</span>
+</span><span class='line'><span class="cm">     * one. */</span>
+</span><span class='line'>    <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">pattern_len</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="cm">/* Case 1 doesn&#39;t apply on the first element, so initialize it to zero. */</span>
+</span><span class='line'>    <span class="n">good_suffix_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">build_good_suffix_case1</span><span class="p">(</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">pattern_len</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">build_good_suffix_case2</span><span class="p">(</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">pattern_len</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Only thing left now is the good suffix rule which is also arguably the most
+difficult part. Easiest (but not the most efficient) way to tackle this is to
+simply turn the both cases to code. At first, we have few corner cases: if a
+mismatch happens on the first character, we can only shift by one since we don&rsquo;t
+really know anything about the text yet. Secondly, since <code>good_suffix_rule</code> is
+not initialized, we should set zeroth element to zero since case 1 cannot apply
+to it. Then we build case 1 and case 2 of the good suffix rule.</p>
+
+<p>First case in good suffix rule is to find the matched part somewhere else in the
+pattern, but it cannot have the same preceding character as the matched
+part. Easiest way to do this is to search all possible suffixes from the
+pattern.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">build_good_suffix_case1</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">,</span>
+</span><span class='line'>                                    <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* Case 1: matched string occurs in the pattern. */</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pattern_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">uint32_t</span> <span class="n">matched_start_idx</span> <span class="o">=</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="n">find_occurrence</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">matched_start_idx</span><span class="p">,</span>
+</span><span class='line'>                                <span class="n">pattern</span> <span class="o">+</span> <span class="n">matched_start_idx</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span>
+</span><span class='line'>                                <span class="n">pattern</span><span class="p">[</span><span class="n">matched_start_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">m</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">matched_start_idx</span> <span class="o">-</span> <span class="n">m</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So, start searching the occurrences of the suffixes. For example, if the pattern
+is <code>abbabab</code>, we&rsquo;ll search occurrences of <code>b</code>, then <code>ab</code>, <code>bab</code>, <code>abab</code> and so
+on. For <code>b</code>, you&rsquo;ll find occurrences in &lsquo;a<strong><em>b</em></strong><strong><em>b</em></strong>a<strong><em>b</em></strong>a<strong><em>b</em></strong>&rsquo;, but it
+may not be preceded by <code>a</code> (because <code>a</code> is now the character that caused the
+mismatch and shifting with that would bring us to the same situation) and the
+rightmost <code>b</code> doesn&rsquo;t count (because shift would be 0 which would be
+nonsense). Hence, the correct occurrence is &lsquo;ab<strong><em>b</em></strong>abab&rsquo;. When building case 1
+for good suffix rule, we feed all these suffixes to <code>find_occurrence</code> function.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">find_occurrence</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">haystack</span><span class="p">,</span> <span class="k">const</span> <span class="kt">size_t</span> <span class="n">comparison_start</span><span class="p">,</span>
+</span><span class='line'>                           <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">needle</span><span class="p">,</span> <span class="k">const</span> <span class="kt">size_t</span> <span class="n">needle_len</span><span class="p">,</span>
+</span><span class='line'>                           <span class="k">const</span> <span class="kt">char</span> <span class="n">preceding</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">comparison_start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">match</span> <span class="o">=</span> <span class="n">strncmp</span><span class="p">(</span><span class="n">haystack</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">needle</span><span class="p">,</span> <span class="n">needle_len</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">match</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">haystack</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">preceding</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we try to find the given suffix somewhere from the pattern. It basically
+tries to be reverse <code>strstr</code>, because we are interested in the rightmost
+match. In addition, the match may not be preceded by the mismatched character
+(parameter <code>preceding</code>). For example, when calculating good suffix rule for
+<code>bab</code>, where <code>b</code> is the mismatched character so the good suffix is <code>ab</code>, this
+function makes following comparisons:</p>
+
+<pre><code>text:    abbabab
+pattern:     ab    # 'ba' != 'ab'
+            ab     # 'ab' == 'ab', but preceded by 'b'
+           ab      # 'ba' != 'ab'
+          ab       # 'bb' != 'ab'
+         ab        # 'ab' == 'ab', and not preceded by 'b' -&gt; return 0
+</code></pre>
+
+<p>Last part of the good suffix rule should check if a suffix of the matched
+substring is a prefix of the pattern. In other words, check if some rightmost
+part of the matched substring is included at the beginning of the pattern. This
+case doesn&rsquo;t apply if previous case applied, so if <code>good_suffix_rule[i]</code> is
+nonzero, we don&rsquo;t have to calculate anything there. One simple way to implement
+this, it is to take each suffix and check if ending of it occurs at the
+beginning of the pattern.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">build_good_suffix_case2</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">good_suffix_array</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pattern</span><span class="p">,</span>
+</span><span class='line'>                                    <span class="k">const</span> <span class="kt">size_t</span> <span class="n">pattern_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* Case 2: suffix of a matched string is a prefix of the pattern. */</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pattern_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">good_suffix_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="cm">/* If case 2 is applies only if case 1 didn&#39;t. */</span>
+</span><span class='line'>            <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="n">is_prefix</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">pattern</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">pattern_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">m</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">good_suffix_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pattern_len</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In <code>build_good_suffix_case2</code> function, we take each suffix and give it to
+<code>is_prefix</code> function. This time the order of the suffixes doesn&rsquo;t matter so
+we&rsquo;ll start looping from the left.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">is_prefix</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">prefix</span><span class="p">,</span>
+</span><span class='line'>                     <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">prefix_len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* Prefix must be a proper prefix, so if str and prefix are the same then</span>
+</span><span class='line'><span class="cm">     * start comparing from the first character. */</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">str</span> <span class="o">==</span> <span class="n">prefix</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">prefix_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">match</span> <span class="o">=</span> <span class="n">strncmp</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">prefix_len</span> <span class="o">-</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">match</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we start checking if <code>str</code> and <code>prefix</code> are the same memory address,
+because we are interested only in proper prefixes (proper prefix is not the
+string itself). Since we know how this function is used, we may use memory
+address comparison here. Then we start decreasing <code>prefix</code> from the right until
+it matches or until all suffixes are checked. For example, when <code>str</code> is the
+same <code>ABBABAB</code>, and <code>prefix</code> is <code>BBABAB</code>, following comparisons are made:</p>
+
+<pre><code>str:     abbabab
+prefix:  bbabab
+         babab
+         abab
+         bab
+         ab        # match -&gt; return '4'
+</code></pre>
+
+<p>This implementation of the good suffix rule is quite inefficient since we
+discard a lot of information, e.g. we would only need to calculate possible
+suffixes once and we could learn those already when calculating the first
+case. But since we are trying to understand how BM works, I think this approach
+is justified since it is easier to understand.</p>
+
+<p>You can find the whole implementation
+<a href="http://aatosjalo.com/downloads/code/bm.c">here</a> with few unit tests. It should
+print something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>gcc -std<span class="o">=</span>c99 -Wall -Wextra -pedantic -Wno-char-subscripts bm.c <span class="o">&amp;&amp;</span> ./a.exe
+</span><span class='line'>searching <span class="s1">&#39;bar&#39;</span> from <span class="s1">&#39;foo&#39;</span>
+</span><span class='line'>searching <span class="s1">&#39;foo&#39;</span> from <span class="s1">&#39;fo&#39;</span>
+</span><span class='line'>searching <span class="s1">&#39;fooooo&#39;</span> from <span class="s1">&#39;foooob&#39;</span>
+</span><span class='line'>searching <span class="s1">&#39;foo&#39;</span> from <span class="s1">&#39;foo&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 0
+</span><span class='line'>searching <span class="s1">&#39;foo&#39;</span> from <span class="s1">&#39;barfoo&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 3
+</span><span class='line'>searching <span class="s1">&#39;foobar&#39;</span> from <span class="s1">&#39;barfoo rfoobarr foobar&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 8
+</span><span class='line'>match <span class="m">1</span> at 16
+</span><span class='line'>searching <span class="s1">&#39;foobar&#39;</span> from <span class="s1">&#39;foobafoobafoobafoobafrboofarfoobar&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 28
+</span><span class='line'>searching <span class="s1">&#39;WOOHOO&#39;</span> from <span class="s1">&#39;HOOWOOWOOHOOWOOWOO&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 6
+</span><span class='line'>searching <span class="s1">&#39;LALLILLA&#39;</span> from <span class="s1">&#39;SALLILAILLATAVANLALLILLALLALALLI&#39;</span>
+</span><span class='line'>match <span class="m">0</span> at 16
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>http://git.savannah.gnu.org/cgit/grep.git/tree/README<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-30T20:21:25+03:00" pubdate data-updated="true"></time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/programming/'>programming</a>
+
+</div>
+
+
+	
+		<span class="comments"><a href="/blog/2014/06/30/understanding-boyer-moore/#disqus_thread">Comments</a></span>
+	
+</div></article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+	
+	
+	
+<!---	<a class="addthis_counter addthis_pill_style"></a> --->
+	</div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Aatos Jalo
+
+<br>
+Powered by Octopress.
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'aatosjalo';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/';
+        var disqus_url = 'http://www.aatosjalo.com/blog/2014/06/30/understanding-boyer-moore/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+</body>
+</html>

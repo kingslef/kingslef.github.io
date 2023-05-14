@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: other | Aatos Jalo]]></title>
+  <link href="http://www.aatosjalo.com/blog/categories/other/atom.xml" rel="self"/>
+  <link href="http://www.aatosjalo.com/"/>
+  <updated>2016-04-02T12:32:28+03:00</updated>
+  <id>http://www.aatosjalo.com/</id>
+  <author>
+    <name><![CDATA[Aatos Jalo]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Adding Finnish alphabets to US keyboard layout]]></title>
+    <link href="http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout/"/>
+    <updated>2015-01-25T12:04:47+02:00</updated>
+    <id>http://www.aatosjalo.com/blog/2015/01/25/adding-finnish-alphabets-to-us-keyboard-layout</id>
+    <content type="html"><![CDATA[<p>I don&rsquo;t like Finnish keyboard layout that much. Way too many characters require
+three keys to be pressed simultaneously. This is especially annoying when
+programming, since to get, e.g., different types of brackets, you have to change
+between Alt Gr and Shift quite heavily. Furthermore, Finnish layout has keys
+like &lsquo;¤&rsquo;, which I have never used (and just recently learned that is used to
+denote an unspecified currency). Many common characters used in programming are
+dead keys, which makes them difficult to use. I haven&rsquo;t ever used the dead key
+functionality in &lsquo;`&rsquo;, &lsquo;~&rsquo; or &lsquo;^&rsquo; and usually I try to use layout where that is
+disabled. In Linux, there is usually a variant of Finnish layout without dead
+keys, but not in Windows. To tackle these problems, I decided to try US layout.</p>
+
+<!-- more -->
+
+
+<p>I mostly write English, but sometimes I need Finnish and quite many words have
+&lsquo;ä&rsquo; or &lsquo;ö&rsquo;. I don&rsquo;t like switching between different layouts, because I often
+forget to change it back. One nice thing in a Finnish keyboard is that it has 105
+keys, one more than the standard US keyboard. This extra key is located between
+left shift and &lsquo;z&rsquo; and is bound to &lsquo;&lt;&rsquo; by default. In
+<a href="http://arkku.com/dvorak/">ArkkuDvorak</a>, this key is used for &lsquo;ä&rsquo; and &lsquo;ö&rsquo;, so I
+decided to create US layout with that addition. I don&rsquo;t remember when I have
+needed those capitalized and I could manage those rare occasions with <code>M-c</code>.</p>
+
+<p>Modifying keyboard layout in Windows requires <a href="https://msdn.microsoft.com/en-us/goglobal/bb964665.aspx">Microsoft Keyboard Layout Creator</a>
+which is quite straightforward to use. There you can load the US layout and
+change the extra key to whatever you want. You can find the source file for MKLC
+<a href="http://aatosjalo.com/downloads/us-ae.klc">here</a> or even the ready-made installer <a href="http://aatosjalo.com/downloads/us-ae-oe.zip">here</a>.</p>
+
+<p>In Linux this is even easier. With <code>xmodmap</code> you can modify your current X
+keyboard bindings. By doing <code>xmodmap -pke &gt; ~/.Xmodmap</code>, you can dump your
+current layout to a file. Then just by applying the following patch you can get
+&lsquo;ä&rsquo; (adiaeresis) and &lsquo;ö&rsquo; (odiaeresis) to that extra key.</p>
+
+<pre><code class="diff">--- .Xmodmap_default_us 2015-01-25 12:47:18.212591435 +0200
++++ .Xmodmap    2015-01-18 21:34:26.435894329 +0200
+@@ -84,7 +88,7 @@
+ keycode  91 = KP_Delete KP_Decimal KP_Delete KP_Decimal
+ keycode  92 = ISO_Level3_Shift NoSymbol ISO_Level3_Shift
+ keycode  93 =
+-keycode  94 = less greater less greater bar brokenbar bar
++keycode  94 = adiaeresis odiaeresis less greater bar brokenbar bar
+ keycode  95 = F11 F11 F11 F11 F11 F11 XF86Switch_VT_11
+ keycode  96 = F12 F12 F12 F12 F12 F12 XF86Switch_VT_12
+ keycode  97 =
+</code></pre>
+
+<p>Xmodmap can be read by <code>xmodmap ~/.Xmodmap</code> (be careful though, you might want
+to test that it actually works by using some other filename). This is usually
+read automatically when X starts, but you can also add this to
+e.g. <code>.xinitrc</code>. While you are at it, you might want to make your <a href="http://c2.com/cgi/wiki?RemapCapsLock">caps lock act as a control</a>
+by modifying the same file. For doing that on Windows, I have used
+<a href="http://sharpkeys.codeplex.com/">this</a> application.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hello]]></title>
+    <link href="http://www.aatosjalo.com/blog/2014/06/12/hello/"/>
+    <updated>2014-06-12T23:32:04+03:00</updated>
+    <id>http://www.aatosjalo.com/blog/2014/06/12/hello</id>
+    <content type="html"><![CDATA[<p>This is the first post. I&rsquo;ll be writing about programming and somehow
+related areas that I&rsquo;m interested in and want to learn more. Basically
+I&rsquo;ll document what I have done and learned, mostly for myself, but if
+someone manages to get here by googling, it&rsquo;s even better. At least
+for the summer I should have some time to spend on this, but after
+that the amount of posts will decrease.</p>
+
+<!-- more -->
+
+
+<p>For the first real post I will write about Boyer-Moore string
+searching algorithm. When I implemented it, I couldn&rsquo;t find any decent
+explanation about the implementation of the good suffix rule. The
+basics behind BM are quite easy to understand but the implementation
+itself is not so straightforward. By writing about it, I&rsquo;ll see if I
+really understood it.</p>
+
+<p>Next, I would like to experiment a little with <a href="http://www.linuxfromscratch.org/">Linux from scratch</a>. I have used many different
+Linux distributions, but I don&rsquo;t have a clue what is required for a
+working system after you have the kernel image. I have been using
+Emacs for awhile, and it would be nice to try to setup Linux with as
+few libraries and applications as possible and just use Emacs for
+everything (as a terminal, shell etc.). I think it wouldn&rsquo;t be very
+usable for the long run since it would miss a lot of modern features
+but something like writing and uploading blog post on it should be
+possible.</p>
+
+<p>I chose <a href="http://octopress.org/">Octopress</a> for my blogging needs since
+it seems to be quite lightweight and just what I need (and of course,
+who doesn&rsquo;t like Markdown?). It doesn&rsquo;t require anything on the server
+side (except SSH access for easier deployment) and writing new posts
+seems to be easy. I don&rsquo;t really know anything about blogging
+platforms at this point and at first I thought that I have to use
+Wordpress or Joomla which might have been little too heavyweight. As a
+web hosting provider I chose <a href="https://www.webhotelli.fi/">Webhotelli.fi</a>
+because it was quite cheap and offered SSH with their smallest plan
+where providers only include SSH with more expensive plans (i.e. buy
+more disk space to get SSH).</p>
+]]></content>
+  </entry>
+  
+</feed>

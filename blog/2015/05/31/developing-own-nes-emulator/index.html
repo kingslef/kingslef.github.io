@@ -1,0 +1,246 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<script data-cfasync="false" type="text/javascript" src="//use.typekit.net/axj3cfp.js"></script>
+	<script data-cfasync="false" type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	<meta charset="utf-8">
+	<title>Creating a NES emulator  | Aatos Jalo</title>
+
+<meta name="author" content="Aatos Jalo"> 
+
+<meta name="description" content="I read an
+interesting post
+about NES internals and its emulation and I immediately wanted to create my own
+emulator. There is already great &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Aatos Jalo" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery.fancybox.pack.js"></script>
+
+<script language="Javascript" type="text/javascript">
+$(document).ready(
+  function() {
+    (function($) {
+      $(".fancybox[data-content-id]").each(function() {
+        this.href = $(this).data('content-id');
+      });
+      $(".fancybox").fancybox({
+        beforeLoad: function() {
+          var el, 
+              id = $(this.element).data('title-id');
+
+          if (id) {
+            el = $('#' + id);
+
+            if (el.length) {
+              this.title = el.html();
+            }
+          }
+          if ($(this).data('content')) {
+            this.content = $(this).data('content');
+          }
+        },
+        helpers: {
+          title: {
+            type: 'inside'
+          }
+        }
+      });
+    })(jQuery);
+  }
+);
+</script>
+
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Aatos Jalo</a></h1>
+<h4></h4>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul>
+	<li><a href="/">Blog</a></li>
+	<!-- <li><a href="/about">About</a></li> -->
+	<!-- <li><a href="/portfolio">Portfolio</a></li> -->
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:www.aatosjalo.com">
+			</form>
+		</div>
+	</div>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Creating a NES Emulator</h2>
+	<div class="entry-content"><p>I read an
+<a href="https://medium.com/@fogleman/i-made-an-nes-emulator-here-s-what-i-learned-about-the-original-nintendo-2e078c9b28fe">interesting post</a>
+about NES internals and its emulation and I immediately wanted to create my own
+emulator. There is already great documentation about NES, so I will be only writing about
+my process and giving some links to learn more.</p>
+
+<!-- more -->
+
+
+<p>I started by trying to understand the 6502
+assembly. <a href="http://nesdev.com/6502guid.txt">This</a> gives nice overview on 6502
+instructions and registers. <a href="http://nesdev.com/">NesDev</a> has also some other nice
+(but apparently outdated) guides.</p>
+
+<p>Next I went to learn about NES programming and I found a good
+<a href="http://nintendoage.com/forum/messageview.cfm?catid=22&amp;threadid=7155">tutorial</a>. It
+explains quite nicely how to interact with the picture processing unit (PPU),
+how the ROM is partitioned and so on. Some details are on a quite high level, so
+more info can be found e. g. in
+<a href="http://wiki.nesdev.com/w/index.php/NES_reference_guide">NesDev Wiki</a>. For
+instance, the <a href="http://wiki.nesdev.com/w/index.php/PPU_registers">PPU registers</a>
+are explained in much more depth.</p>
+
+<p>I found an <code>bmp2chr</code> converter
+(<a href="http://bobrost.com/nes/files/nes_sprite_tools_2004_03_18.zip">sources here</a>),
+so I managed to create my own sprites. First I drew tile map as BMP using
+<a href="http://www.aseprite.org/">Asprite</a>, then converted that to CHR. As an
+assembler, I used <code>nesasm3</code>
+(<a href="http://www.nespowerpak.com/nesasm/nesasmsrc.zip">sources</a>). Windows binaries
+were quite easy to come by, but sources (for example using in Linux) were a bit
+harder. For emulating first trials, I used
+<a href="http://www.fceux.com/web/download.html">FCEUX Win</a>. There are many
+cross-platform emulators, but I found debugger only in Windows version of
+<code>FCEUX</code>, so I had to use Wine for that.</p>
+
+<p><img src="/images/posts/helloworld.gif" title="My first ROM!" ></p>
+
+<p>At this point I created two simple NES ROMs. First one had few sprites moving
+across the screen (above), and the second one was a two-player pong game
+(below). Sources can be found in
+<a href="https://bitbucket.org/aatos/nes-demos/src">Bitbucket</a> (those could be
+improved - to say the least).</p>
+
+<p><img src="/images/posts/pong.gif" title="Pong game" ></p>
+
+<p>I decided not to handle sounds at this point, so now I was ready for starting
+the emulator itself. After reading the
+<a href="http://wiki.nesdev.com/w/index.php/INES">header</a>, I started handling the
+<a href="http://www.obelisk.demon.co.uk/6502/reference.html">opcodes</a>. Fast-forward
+some time and I was able to even draw some sprites to the screen!</p>
+
+<p><img src="/images/posts/simpler.png" title="First ROM emulated" ></p>
+
+<p>There is still much to do, but the sources can be found from
+<a href="https://bitbucket.org/aatos/6502-emulator/src">here</a> (requires <code>clang</code> and
+<code>SFML</code> for the build, and <code>gmock</code> and <code>gtest</code> for the tests).</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-05-31T21:24:35+03:00" pubdate data-updated="true"></time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/programming/'>programming</a>
+
+</div>
+
+
+	
+		<span class="comments"><a href="/blog/2015/05/31/developing-own-nes-emulator/#disqus_thread">Comments</a></span>
+	
+</div></article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+	
+	
+	
+<!---	<a class="addthis_counter addthis_pill_style"></a> --->
+	</div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Aatos Jalo
+
+<br>
+Powered by Octopress.
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'aatosjalo';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/';
+        var disqus_url = 'http://www.aatosjalo.com/blog/2015/05/31/developing-own-nes-emulator/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+</body>
+</html>
